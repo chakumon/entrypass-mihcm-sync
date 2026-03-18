@@ -1270,7 +1270,7 @@ $cfgY += 30
 
 # Config action buttons
 $script:btnTestConn = New-Object System.Windows.Forms.Button
-$script:btnTestConn.Text      = "Test Connection"
+$script:btnTestConn.Text      = "Test API Connection"
 $script:btnTestConn.Font      = New-Object System.Drawing.Font("Segoe UI",8.5)
 $script:btnTestConn.FlatStyle = "Flat"
 $script:btnTestConn.BackColor = [System.Drawing.Color]::FromArgb(230,235,240)
@@ -1883,51 +1883,36 @@ $script:btnValidateLicense.add_Click({
 # Config: Test Connection
 $script:btnTestConn.add_Click({
     $cfg = Load-AppConfig
-    $results = @()
-    $script:lblCfgStatus.Text      = "Testing connections..."
+    $script:lblCfgStatus.Text      = "Testing API connection..."
     $script:lblCfgStatus.ForeColor = $clrTextDim
     $panelConfig.Refresh()
 
-    # Test 1: MiHCM API
-    $primary = if ($cfg.primaryKey) { $cfg.primaryKey } else { $script:txtCfgPrimary.Text.Trim() }
-    $secret  = if ($cfg.secretKey)  { $cfg.secretKey }  else { $script:txtCfgSecret.Text.Trim() }
+    $primary = if ($cfg.primaryKey) { $cfg.primaryKey } else { "" }
+    $secret  = if ($cfg.secretKey)  { $cfg.secretKey }  else { "" }
     $baseUrl = if ($cfg.apiEndpoint) { $cfg.apiEndpoint } else { "https://api.mihcm.com" }
-    $apiStatus = ""
+
     if ([string]::IsNullOrWhiteSpace($primary) -or [string]::IsNullOrWhiteSpace($secret)) {
-        $apiStatus = "API: Not configured"
-    } else {
-        try {
-            $url = "$baseUrl/oauth2/token?grantType=client_credentials&clientId=$primary&clientSecret=$secret"
-            $raw = Invoke-WebRequest -Uri $url -Method GET -Headers @{"Ocp-Apim-Subscription-Key"=$primary} -UseBasicParsing -TimeoutSec 15
-            $res = $raw.Content | ConvertFrom-Json
-            if ($res.accessToken) { $apiStatus = "API: Connected" }
-            else { $apiStatus = "API: No token returned" }
-        } catch {
-            $sc = ""
-            if ($_.Exception.Response) { $sc = " HTTP $([int]$_.Exception.Response.StatusCode)" }
-            $apiStatus = "API: FAILED$sc"
+        $script:lblCfgStatus.Text      = "API keys not configured in config.json"
+        $script:lblCfgStatus.ForeColor = $clrOrange
+        return
+    }
+    try {
+        $url = "$baseUrl/oauth2/token?grantType=client_credentials&clientId=$primary&clientSecret=$secret"
+        $raw = Invoke-WebRequest -Uri $url -Method GET -Headers @{"Ocp-Apim-Subscription-Key"=$primary} -UseBasicParsing -TimeoutSec 15
+        $res = $raw.Content | ConvertFrom-Json
+        if ($res.accessToken) {
+            $script:lblCfgStatus.Text      = "API Connected -- Token obtained successfully"
+            $script:lblCfgStatus.ForeColor = $clrGreen
+        } else {
+            $script:lblCfgStatus.Text      = "API responded but no token returned. Check keys."
+            $script:lblCfgStatus.ForeColor = $clrOrange
         }
+    } catch {
+        $sc = ""
+        if ($_.Exception.Response) { $sc = " (HTTP $([int]$_.Exception.Response.StatusCode))" }
+        $script:lblCfgStatus.Text      = "API FAILED$sc -- $($_.Exception.Message)"
+        $script:lblCfgStatus.ForeColor = [System.Drawing.Color]::FromArgb(210,60,60)
     }
-
-    # Test 2: Firebird DB
-    $dbPath = $script:txtCfgDbPath.Text.Trim()
-    $fbUser = $script:txtCfgFbUser.Text.Trim()
-    $fbPwd  = $script:txtCfgFbPass.Text.Trim()
-    $fbLib  = $script:txtCfgFbLib.Text.Trim()
-    $dbStatus = ""
-    if ([string]::IsNullOrWhiteSpace($dbPath)) {
-        $dbStatus = "DB: Not configured"
-    } else {
-        $testResult = Test-FirebirdConnection -DbPath $dbPath -FbUser $fbUser -FbPassword $fbPwd -ClientLibrary $fbLib
-        if ($testResult.Success) { $dbStatus = "DB: $($testResult.Message)" }
-        else { $dbStatus = "DB: FAILED - $($testResult.Message)" }
-    }
-
-    # Show combined result
-    $combined = "$apiStatus  |  $dbStatus"
-    $allOk = ($apiStatus -like "API: Connected*") -and ($dbStatus -like "DB: Connected*")
-    $script:lblCfgStatus.Text      = $combined
-    $script:lblCfgStatus.ForeColor = if ($allOk) { $clrGreen } else { $clrOrange }
 })
 
 # Config: Save Only
