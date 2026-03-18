@@ -861,8 +861,8 @@ function Make-StatLabel {
     return $v
 }
 $script:lblSaved   = Make-StatLabel "Uploaded"  14  $clrGreen
-$script:lblSkipped = Make-StatLabel "Skipped"   230 $clrOrange
-$script:lblFailed  = Make-StatLabel "Failed"    446 ([System.Drawing.Color]::FromArgb(210,60,60))
+$script:lblSkipped = New-Object System.Windows.Forms.Label  # hidden - kept for internal tracking
+$script:lblFailed  = Make-StatLabel "Failed"    230 ([System.Drawing.Color]::FromArgb(210,60,60))
 
 # Site info card
 $siteCard = New-Object System.Windows.Forms.Panel
