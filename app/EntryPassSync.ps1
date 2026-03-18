@@ -1485,10 +1485,10 @@ function Refresh-Dashboard {
     if ($cfg -and -not [string]::IsNullOrWhiteSpace($cfg.licenseKey) -and -not [string]::IsNullOrWhiteSpace($cfg.primaryKey)) {
         $dataSource = if ($cfg.dataSource) { $cfg.dataSource } else { "file" }
         if ($dataSource -eq "database") {
-            $script:lblStatus.Text      = "Connected & Licensed -- Database Direct Mode"
+            $script:lblStatus.Text      = "Database Direct Mode"
             $script:lblStatus.ForeColor = $script:clrBlue
         } else {
-            $script:lblStatus.Text      = "Connected & Licensed -- File Mode"
+            $script:lblStatus.Text      = "File Mode"
             $script:lblStatus.ForeColor = $script:clrGreen
         }
     } else {
