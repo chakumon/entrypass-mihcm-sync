@@ -841,14 +841,16 @@ $script:lblLastSync.Font      = New-Object System.Drawing.Font("Segoe UI",8)
 $script:lblLastSync.ForeColor = $clrTextDim
 $script:lblLastSync.Location  = New-Object System.Drawing.Point(440,36)
 $script:lblLastSync.Size      = New-Object System.Drawing.Size(200,18)
+$script:lblLastSync.TextAlign = "TopRight"
 $statusCard.Controls.Add($script:lblLastSync)
 
 $script:lblNextSync = New-Object System.Windows.Forms.Label
 $script:lblNextSync.Text      = "Next sync: --:--"
 $script:lblNextSync.Font      = New-Object System.Drawing.Font("Segoe UI",8)
-$script:lblNextSync.ForeColor = $clrTextDim
+$script:lblNextSync.ForeColor = $clrBlue
 $script:lblNextSync.Location  = New-Object System.Drawing.Point(440,54)
 $script:lblNextSync.Size      = New-Object System.Drawing.Size(200,18)
+$script:lblNextSync.TextAlign = "TopRight"
 $statusCard.Controls.Add($script:lblNextSync)
 
 # Stats row
