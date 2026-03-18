@@ -176,7 +176,9 @@ function Test-LicenseKey {
         }
     }
     if (-not $data) { Write-SyncLog "LICENSE: No data available."; return $false }
-    $entry = $data | Where-Object { $_.licenseKey -eq $Key }
+    # License JSON is a dictionary keyed by license key
+    $entry = $data.$Key
+    if (-not $entry) { $entry = $data.PSObject.Properties[$Key].Value 2>$null }
     if (-not $entry) { Write-SyncLog "LICENSE: Key not found ($source)."; return $false }
     if ($entry.active -ne $true) { Write-SyncLog "LICENSE: Key is inactive ($source)."; return $false }
     try {
