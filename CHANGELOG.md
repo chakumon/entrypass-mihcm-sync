@@ -2,6 +2,12 @@
 
 All notable changes to EntryPassSync will be documented in this file.
 
+## [1.1.1] - 2026-03-19
+
+### Added
+- Dajayana logo on window title bar and system tray icon
+- Sync runs immediately on app startup
+
 ## [1.1.0] - 2026-03-19
 
 ### Added

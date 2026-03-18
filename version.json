@@ -1,5 +1,5 @@
 {
-  "version": "1.1.0",
+  "version": "1.1.1",
   "released": "2026-03-19",
-  "notes": "Sync on startup, auto-update system, UI cleanup"
+  "notes": "Dajayana logo on title bar and system tray, sync on startup"
 }
