@@ -768,10 +768,10 @@ $mainForm.Controls.Add($contentArea)
 # Helper to make a content panel
 function New-ContentPanel {
     $p = New-Object System.Windows.Forms.Panel
-    $p.Size      = New-Object System.Drawing.Size(700,620)
-    $p.Location  = New-Object System.Drawing.Point(0,0)
+    $p.Dock      = "Fill"
     $p.BackColor = $clrPanelBg
     $p.Visible   = $false
+    $p.AutoScroll = $true
     $contentArea.Controls.Add($p)
     return $p
 }
@@ -926,8 +926,9 @@ $script:txtLiveLog.BackColor    = $clrDarkBox
 $script:txtLiveLog.ForeColor    = [System.Drawing.Color]::FromArgb(180,220,180)
 $script:txtLiveLog.Font         = New-Object System.Drawing.Font("Consolas",8)
 $script:txtLiveLog.Location     = New-Object System.Drawing.Point(24,400)
-$script:txtLiveLog.Size         = New-Object System.Drawing.Size(652,192)
+$script:txtLiveLog.Size         = New-Object System.Drawing.Size(652,150)
 $script:txtLiveLog.BorderStyle  = "None"
+$script:txtLiveLog.Anchor       = "Top,Left,Right,Bottom"
 $panelDashboard.Controls.Add($script:txtLiveLog)
 
 # ============================================================
