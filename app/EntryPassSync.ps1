@@ -2015,8 +2015,14 @@ function Check-ForUpdate {
     }
 }
 
-# Check for updates on startup
-Check-ForUpdate
+# Check for updates shortly after startup (deferred so form is ready)
+$script:updateTimer = New-Object System.Windows.Forms.Timer
+$script:updateTimer.Interval = 3000  # 3 seconds after launch
+$script:updateTimer.add_Tick({
+    $script:updateTimer.Stop()
+    Check-ForUpdate
+})
+$script:updateTimer.Start()
 
 # ============================================================
 # BUILT-IN SYNC TIMER (syncs every 15 minutes while app is open)
