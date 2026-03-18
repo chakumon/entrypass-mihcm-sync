@@ -1968,7 +1968,7 @@ $script:syncTimer.add_Tick({
 $script:syncTimer.Start()
 
 # Also add to Windows startup so it launches automatically
-$startupKey = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run"
+$startupKey = "HKLM:\Software\Microsoft\Windows\CurrentVersion\Run"
 $startupName = "EntryPassMiHCMSync"
 $startupCmd = "C:\Windows\SysWOW64\WindowsPowerShell\v1.0\powershell.exe -WindowStyle Hidden -ExecutionPolicy Bypass -NoProfile -File `"$($script:appDir)\EntryPassSync.ps1`""
 try {
