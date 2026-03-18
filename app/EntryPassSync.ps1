@@ -637,15 +637,17 @@ function Install-SyncTask {
         default  { "PT30M" }
     }
 
+    $startBoundary = (Get-Date -Format "yyyy-MM-ddT06:00:00")
     $taskXml = @"
 <?xml version="1.0" encoding="UTF-16"?>
 <Task version="1.2" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">
   <RegistrationInfo><Description>EntryPass MiHCM sync for $Location</Description></RegistrationInfo>
   <Triggers>
-    <CalendarTrigger>
+    <TimeTrigger>
       <Repetition><Interval>$interval</Interval><Duration>P1D</Duration><StopAtDurationEnd>false</StopAtDurationEnd></Repetition>
-      <StartBoundary>2024-01-01T06:00:00</StartBoundary>
-    </CalendarTrigger>
+      <StartBoundary>$startBoundary</StartBoundary>
+      <Enabled>true</Enabled>
+    </TimeTrigger>
   </Triggers>
   <Principals><Principal id="Author"><UserId>S-1-5-18</UserId><LogonType>Password</LogonType><RunLevel>HighestAvailable</RunLevel></Principal></Principals>
   <Settings><MultipleInstancesPolicy>IgnoreNew</MultipleInstancesPolicy><DisallowStartIfOnBatteries>false</DisallowStartIfOnBatteries><StopIfGoingOnBatteries>false</StopIfGoingOnBatteries><ExecutionTimeLimit>PT1H</ExecutionTimeLimit><Priority>7</Priority><StartWhenAvailable>true</StartWhenAvailable><RestartOnFailure><Interval>PT5M</Interval><Count>3</Count></RestartOnFailure></Settings>
