@@ -1387,7 +1387,16 @@ $btnCheckUpdate.FlatStyle = "Flat"
 $btnCheckUpdate.BackColor = $clrBlue
 $btnCheckUpdate.ForeColor = [System.Drawing.Color]::White
 $btnCheckUpdate.Cursor    = [System.Windows.Forms.Cursors]::Hand
-$btnCheckUpdate.add_Click({ Check-ForUpdate })
+$script:lblUpdateStatus = New-Object System.Windows.Forms.Label
+$script:lblUpdateStatus.Text      = ""
+$script:lblUpdateStatus.Font      = New-Object System.Drawing.Font("Segoe UI",8.5)
+$script:lblUpdateStatus.ForeColor = $clrGreen
+$script:lblUpdateStatus.Location  = New-Object System.Drawing.Point(190,308)
+$script:lblUpdateStatus.Size      = New-Object System.Drawing.Size(400,20)
+$aboutCard.Controls.Add($script:lblUpdateStatus)
+
+$script:checkUpdateHandler = { Check-ForUpdate }
+$btnCheckUpdate.add_Click($script:checkUpdateHandler)
 $aboutCard.Controls.Add($btnCheckUpdate)
 
 # ============================================================
@@ -1976,6 +1985,10 @@ $mainForm.ResumeLayout($false)
 # ============================================================
 function Check-ForUpdate {
     try {
+        $script:lblUpdateStatus.Text      = "Checking..."
+        $script:lblUpdateStatus.ForeColor = $script:clrTextDim
+        [System.Windows.Forms.Application]::DoEvents()
+
         [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
         $wc = New-Object System.Net.WebClient
         $json = $wc.DownloadString($script:updateUrl)
@@ -1984,34 +1997,56 @@ function Check-ForUpdate {
         $localVer  = [version]$script:appVersion
         if ($remoteVer -gt $localVer) {
             Write-SyncLog "Update available: v$($remote.version) (current: v$script:appVersion)"
-            $ans = [System.Windows.Forms.MessageBox]::Show(
-                "A new version is available!`n`nCurrent: v$script:appVersion`nNew: v$($remote.version)`n`n$($remote.notes)`n`nUpdate now?",
-                "Update Available", "YesNo", "Information")
-            if ($ans -eq "Yes") {
-                Write-SyncLog "Downloading update v$($remote.version)..."
-                $scriptPath = Join-Path $script:appDir "EntryPassSync.ps1"
-                $tempPath   = Join-Path $script:appDir "EntryPassSync.ps1.update"
-                $wc.DownloadFile($script:scriptUrl, $tempPath)
-                # Verify download is valid (must contain our marker)
-                $content = Get-Content $tempPath -Raw -ErrorAction Stop
-                if ($content -match 'appVersion') {
-                    Copy-Item $tempPath $scriptPath -Force
-                    Remove-Item $tempPath -Force -ErrorAction SilentlyContinue
-                    Write-SyncLog "Update installed. Restarting..."
-                    $psExe = "C:\Windows\SysWOW64\WindowsPowerShell\v1.0\powershell.exe"
-                    Start-Process $psExe -ArgumentList "-ExecutionPolicy Bypass -NoProfile -File `"$scriptPath`""
-                    $script:reallyExit = $true
-                    $mainForm.Close()
-                } else {
-                    Remove-Item $tempPath -Force -ErrorAction SilentlyContinue
-                    Write-SyncLog "Update download invalid -- keeping current version"
+            $script:lblUpdateStatus.Text      = "v$($remote.version) available!"
+            $script:lblUpdateStatus.ForeColor = $script:clrOrange
+            $script:pendingUpdateVersion = $remote
+            # Change button to "Update Now"
+            $btnCheckUpdate.Text      = "Update Now"
+            $btnCheckUpdate.BackColor = $script:clrGreen
+            # Swap click handler
+            $btnCheckUpdate.remove_Click($script:checkUpdateHandler)
+            $script:updateNowHandler = {
+                $btnCheckUpdate.Enabled = $false
+                $btnCheckUpdate.Text    = "Updating..."
+                $script:lblUpdateStatus.Text = "Downloading..."
+                [System.Windows.Forms.Application]::DoEvents()
+                try {
+                    $wc2 = New-Object System.Net.WebClient
+                    $scriptPath = Join-Path $script:appDir "EntryPassSync.ps1"
+                    $tempPath   = Join-Path $script:appDir "EntryPassSync.ps1.update"
+                    $wc2.DownloadFile($script:scriptUrl, $tempPath)
+                    $dl = Get-Content $tempPath -Raw -ErrorAction Stop
+                    if ($dl -match 'appVersion') {
+                        Copy-Item $tempPath $scriptPath -Force
+                        Remove-Item $tempPath -Force -ErrorAction SilentlyContinue
+                        Write-SyncLog "Update installed. Restarting..."
+                        $psExe = "C:\Windows\SysWOW64\WindowsPowerShell\v1.0\powershell.exe"
+                        Start-Process $psExe -ArgumentList "-ExecutionPolicy Bypass -NoProfile -File `"$scriptPath`""
+                        $script:reallyExit = $true
+                        $mainForm.Close()
+                    } else {
+                        Remove-Item $tempPath -Force -ErrorAction SilentlyContinue
+                        $script:lblUpdateStatus.Text      = "Download invalid"
+                        $script:lblUpdateStatus.ForeColor = ([System.Drawing.Color]::FromArgb(210,60,60))
+                        $btnCheckUpdate.Enabled = $true
+                    }
+                } catch {
+                    $script:lblUpdateStatus.Text      = "Update failed"
+                    $script:lblUpdateStatus.ForeColor = ([System.Drawing.Color]::FromArgb(210,60,60))
+                    $btnCheckUpdate.Enabled = $true
+                    Write-SyncLog "Update download failed: $($_.Exception.Message)"
                 }
             }
+            $btnCheckUpdate.add_Click($script:updateNowHandler)
         } else {
             Write-SyncLog "Version check: v$script:appVersion is up to date"
+            $script:lblUpdateStatus.Text      = "You're up to date!"
+            $script:lblUpdateStatus.ForeColor = $script:clrGreen
         }
     } catch {
         Write-SyncLog "Update check failed: $($_.Exception.Message)"
+        $script:lblUpdateStatus.Text      = "Check failed"
+        $script:lblUpdateStatus.ForeColor = ([System.Drawing.Color]::FromArgb(210,60,60))
     }
 }
 
