@@ -1,10 +1,10 @@
 # EntryPassSync.ps1 -- EntryPass to MiHCM Sync -- All-in-One GUI Application
 # Company  : Dajayana Trading (www.dajayana.com)
-# Version  : 1.1.2
+# Version  : 1.1.3
 # Contact  : +60 16-883 8338
 # Requires : PowerShell 5.1+, Windows 10/11
 
-$script:appVersion = "1.1.2"
+$script:appVersion = "1.1.3"
 $script:updateUrl  = "https://raw.githubusercontent.com/chakumon/entrypass-mihcm-sync/main/version.json"
 $script:scriptUrl  = "https://raw.githubusercontent.com/chakumon/entrypass-mihcm-sync/main/app/EntryPassSync.ps1"
 

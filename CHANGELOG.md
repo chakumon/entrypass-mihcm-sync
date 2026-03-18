@@ -2,6 +2,16 @@
 
 All notable changes to EntryPassSync will be documented in this file.
 
+## [1.1.3] - 2026-03-19
+
+### Removed
+- "Save Only" button (redundant)
+- Task Scheduler logic and UAC elevation from Save button
+- "Installing scheduled task..." message
+
+### Changed
+- "Save Configuration" now simply saves config.json and refreshes dashboard
+
 ## [1.1.2] - 2026-03-19
 
 ### Added
