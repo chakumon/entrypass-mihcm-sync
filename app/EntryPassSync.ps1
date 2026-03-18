@@ -1973,6 +1973,27 @@ $mainForm.add_Load({
 $mainForm.ResumeLayout($false)
 
 # ============================================================
+# BUILT-IN SYNC TIMER (syncs every 15 minutes while app is open)
+# ============================================================
+$script:syncTimer = New-Object System.Windows.Forms.Timer
+$script:syncTimer.Interval = 15 * 60 * 1000  # 15 minutes in ms
+$script:syncTimer.add_Tick({
+    if (-not $script:syncRunning -and (Is-Configured)) {
+        Write-SyncLog "Auto-sync triggered (15-minute interval)"
+        Start-SyncBackground
+    }
+})
+$script:syncTimer.Start()
+
+# Also add to Windows startup so it launches automatically
+$startupKey = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run"
+$startupName = "EntryPassMiHCMSync"
+$startupCmd = "C:\Windows\SysWOW64\WindowsPowerShell\v1.0\powershell.exe -WindowStyle Hidden -ExecutionPolicy Bypass -NoProfile -File `"$($script:appDir)\EntryPassSync.ps1`""
+try {
+    Set-ItemProperty -Path $startupKey -Name $startupName -Value $startupCmd -ErrorAction SilentlyContinue
+} catch {}
+
+# ============================================================
 # RUN
 # ============================================================
 [System.Windows.Forms.Application]::Run($mainForm)
