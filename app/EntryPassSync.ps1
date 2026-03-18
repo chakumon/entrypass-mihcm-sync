@@ -688,6 +688,7 @@ $sidebar = New-Object System.Windows.Forms.Panel
 $sidebar.Size      = New-Object System.Drawing.Size(200,620)
 $sidebar.Location  = New-Object System.Drawing.Point(0,0)
 $sidebar.BackColor = $clrSidebar
+$sidebar.Anchor    = "Top,Left,Bottom"
 $mainForm.Controls.Add($sidebar)
 
 # App title in sidebar
@@ -746,6 +747,7 @@ $sideFooter1.Font      = New-Object System.Drawing.Font("Segoe UI",8,[System.Dra
 $sideFooter1.ForeColor = [System.Drawing.Color]::FromArgb(140,160,190)
 $sideFooter1.Location  = New-Object System.Drawing.Point(12,560)
 $sideFooter1.Size      = New-Object System.Drawing.Size(176,18)
+$sideFooter1.Anchor    = "Left,Bottom"
 $sidebar.Controls.Add($sideFooter1)
 
 $sideFooter2 = New-Object System.Windows.Forms.Label
@@ -754,6 +756,7 @@ $sideFooter2.Font      = New-Object System.Drawing.Font("Segoe UI",7.5)
 $sideFooter2.ForeColor = [System.Drawing.Color]::FromArgb(100,120,150)
 $sideFooter2.Location  = New-Object System.Drawing.Point(12,578)
 $sideFooter2.Size      = New-Object System.Drawing.Size(176,18)
+$sideFooter2.Anchor    = "Left,Bottom"
 $sidebar.Controls.Add($sideFooter2)
 
 # ============================================================
@@ -763,6 +766,7 @@ $contentArea = New-Object System.Windows.Forms.Panel
 $contentArea.Size      = New-Object System.Drawing.Size(700,620)
 $contentArea.Location  = New-Object System.Drawing.Point(200,0)
 $contentArea.BackColor = $clrPanelBg
+$contentArea.Anchor    = "Top,Left,Right,Bottom"
 $mainForm.Controls.Add($contentArea)
 
 # Helper to make a content panel
@@ -794,6 +798,7 @@ $statusCard = New-Object System.Windows.Forms.Panel
 $statusCard.BackColor = [System.Drawing.Color]::White
 $statusCard.Location  = New-Object System.Drawing.Point(24,64)
 $statusCard.Size      = New-Object System.Drawing.Size(652,78)
+$statusCard.Anchor     = "Top,Left,Right"
 $panelDashboard.Controls.Add($statusCard)
 
 $lblStatusTitle = New-Object System.Windows.Forms.Label
@@ -825,6 +830,7 @@ $statsCard = New-Object System.Windows.Forms.Panel
 $statsCard.BackColor = [System.Drawing.Color]::White
 $statsCard.Location  = New-Object System.Drawing.Point(24,152)
 $statsCard.Size      = New-Object System.Drawing.Size(652,72)
+$statsCard.Anchor     = "Top,Left,Right"
 $panelDashboard.Controls.Add($statsCard)
 
 function Make-StatLabel {
@@ -854,6 +860,7 @@ $siteCard = New-Object System.Windows.Forms.Panel
 $siteCard.BackColor = [System.Drawing.Color]::White
 $siteCard.Location  = New-Object System.Drawing.Point(24,234)
 $siteCard.Size      = New-Object System.Drawing.Size(652,92)
+$siteCard.Anchor     = "Top,Left,Right"
 $panelDashboard.Controls.Add($siteCard)
 
 $lblSiteTitle = New-Object System.Windows.Forms.Label
@@ -912,6 +919,7 @@ $panelDashboard.Controls.Add($script:lblSyncStatus)
 # Live log box
 $lblLiveLog = New-Object System.Windows.Forms.Label
 $lblLiveLog.Text      = "Live Output"
+$lblLiveLog.Anchor    = "Top,Left"
 $lblLiveLog.Font      = New-Object System.Drawing.Font("Segoe UI",8)
 $lblLiveLog.ForeColor = $clrTextDim
 $lblLiveLog.Location  = New-Object System.Drawing.Point(24,382)
