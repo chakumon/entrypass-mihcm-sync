@@ -1465,8 +1465,9 @@ function Switch-Panel {
 }
 
 foreach ($k in $script:navItems.Keys) {
-    $capturedKey = $k
-    $script:navItems[$k].add_Click({ Switch-Panel $capturedKey })
+    $thisKey = $k.ToString()
+    $script:navItems[$k].Tag = $thisKey
+    $script:navItems[$k].add_Click({ Switch-Panel $this.Tag })
     $script:navItems[$k].add_MouseEnter({
         $src = $args[0]
         if ($src.BackColor -ne $script:clrSidebarAct) {
