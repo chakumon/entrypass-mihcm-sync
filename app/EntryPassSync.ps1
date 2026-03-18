@@ -326,14 +326,9 @@ function Load-FirebirdAssembly {
     if (-not [string]::IsNullOrWhiteSpace($ClientLibrary) -and (Test-Path $ClientLibrary)) {
         $searchPaths += $ClientLibrary
     }
+    # App folder first (bundled embedded engine + .NET provider)
     $searchPaths += @(
-        (Join-Path $script:appDir "FirebirdSql.Data.FirebirdClient.dll"),
-        (Join-Path $DbPath "FirebirdSql.Data.FirebirdClient.dll"),
-        (Join-Path $DbPath "VCSG\FirebirdSql.Data.FirebirdClient.dll"),
-        "C:\EntryPass\P1_Server\FirebirdSql.Data.FirebirdClient.dll",
-        "C:\EntryPass\P1_Server\VCSG\FirebirdSql.Data.FirebirdClient.dll",
-        "C:\Program Files (x86)\Firebird\Firebird_2_5\bin\fbclient.dll",
-        "C:\Program Files\Firebird\Firebird_2_5\bin\fbclient.dll"
+        (Join-Path $script:appDir "FirebirdSql.Data.FirebirdClient.dll")
     )
     foreach ($path in $searchPaths) {
         if ([string]::IsNullOrWhiteSpace($path)) { continue }
@@ -624,7 +619,7 @@ function Run-FullSync {
 function Install-SyncTask {
     param([string]$Location,[string]$Frequency)
     $taskName  = "EntryPass-MiHCM Sync - $Location"
-    $psExe     = "powershell.exe"
+    $psExe     = "C:\Windows\SysWOW64\WindowsPowerShell\v1.0\powershell.exe"
     $script    = Join-Path $script:appDir "EntryPassSync.ps1"
     $args      = "-ExecutionPolicy Bypass -NoProfile -WindowStyle Hidden -File `"$script`" -RunSyncOnly"
 
