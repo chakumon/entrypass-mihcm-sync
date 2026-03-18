@@ -92,8 +92,12 @@ function Write-SyncLog {
     $ts    = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
     $entry = "[$ts] $Message"
     try { Add-Content -Path $script:logFile -Value $entry -Encoding UTF8 } catch {}
-    if ($script:bgWorker -ne $null) {
-        try { $script:bgWorker.ReportProgress(0, $entry) } catch {}
+    if ($script:txtLiveLog -ne $null) {
+        try {
+            $script:txtLiveLog.AppendText("$entry`r`n")
+            $script:txtLiveLog.ScrollToCaret()
+            [System.Windows.Forms.Application]::DoEvents()
+        } catch {}
     }
 }
 
@@ -1697,72 +1701,50 @@ function Start-SyncBackground {
         Switch-Panel "navConfig"
         return
     }
-    if ($script:bgWorker -ne $null -and $script:bgWorker.IsBusy) {
+    if ($script:syncRunning) {
         [System.Windows.Forms.MessageBox]::Show("A sync is already running. Please wait.", "Busy", "OK", "Information") | Out-Null
         return
     }
 
+    $script:syncRunning = $true
     $script:txtLiveLog.Text = ""
     $script:lblSyncStatus.Text      = "Syncing..."
     $script:lblSyncStatus.ForeColor = $clrOrange
     $script:btnSyncNow.Enabled      = $false
+    $mainForm.Refresh()
 
-    $bw = New-Object System.ComponentModel.BackgroundWorker
-    $bw.WorkerReportsProgress = $true
-    $bw.WorkerSupportsCancellation = $false
-    $script:bgWorker = $bw
-
-    $bw.add_DoWork({
-        param($sender,$e)
-        $script:bgWorker = $sender
-        $e.Result = Run-FullSync -Worker $sender
-    })
-
-    $bw.add_ProgressChanged({
-        param($sender,$e)
-        $logLine = $e.UserState
-        if (-not [string]::IsNullOrWhiteSpace($logLine)) {
-            $script:txtLiveLog.AppendText("$logLine`r`n")
-            $script:txtLiveLog.ScrollToCaret()
-        }
-    })
-
-    $bw.add_RunWorkerCompleted({
-        param($sender,$e)
-        $script:bgWorker = $null
-        $script:btnSyncNow.Enabled = $true
+    try {
+        $res = Run-FullSync -Worker $null
         $now = (Get-Date).ToString("yyyy-MM-dd HH:mm:ss")
 
-        if ($e.Error) {
-            $script:lblSyncStatus.Text      = "Sync error: $($e.Error.Message)"
-            $script:lblSyncStatus.ForeColor = [System.Drawing.Color]::FromArgb(210,60,60)
-            try { $script:trayIcon.ShowBalloonTip(5000,"EntryPass Sync","Sync failed: $($e.Error.Message)",[System.Windows.Forms.ToolTipIcon]::Error) } catch {}
+        if ($res -and $res.Stats) {
+            $script:lastStats.Saved   = $res.Stats.Saved
+            $script:lastStats.Skipped = $res.Stats.Skipped
+            $script:lastStats.Failed  = $res.Stats.Failed
+            $script:lastStats.Time    = $now
+            $script:lastStats.Result  = if ($res.Result) { $res.Result } else { "Done" }
+            $script:lblSaved.Text   = "$($res.Stats.Saved)"
+            $script:lblSkipped.Text = "$($res.Stats.Skipped)"
+            $script:lblFailed.Text  = "$($res.Stats.Failed)"
+            $script:lblLastSync.Text = "Last sync: $now"
+            $msg = "Saved:$($res.Stats.Saved) Skipped:$($res.Stats.Skipped) Failed:$($res.Stats.Failed)"
+            $script:lblSyncStatus.Text      = "Sync complete -- $msg"
+            $script:lblSyncStatus.ForeColor = $clrGreen
+            try { $script:trayIcon.ShowBalloonTip(5000,"EntryPass Sync","Sync complete: $msg",[System.Windows.Forms.ToolTipIcon]::Info) } catch {}
         } else {
-            $res = $e.Result
-            if ($res -and $res.Stats) {
-                $script:lastStats.Saved   = $res.Stats.Saved
-                $script:lastStats.Skipped = $res.Stats.Skipped
-                $script:lastStats.Failed  = $res.Stats.Failed
-                $script:lastStats.Time    = $now
-                $script:lastStats.Result  = if ($res.Result) { $res.Result } else { "Done" }
-                $script:lblSaved.Text   = "$($res.Stats.Saved)"
-                $script:lblSkipped.Text = "$($res.Stats.Skipped)"
-                $script:lblFailed.Text  = "$($res.Stats.Failed)"
-                $script:lblLastSync.Text = "Last sync: $now"
-                $msg = "Saved:$($res.Stats.Saved) Skipped:$($res.Stats.Skipped) Failed:$($res.Stats.Failed)"
-                $script:lblSyncStatus.Text      = "Sync complete -- $msg"
-                $script:lblSyncStatus.ForeColor = $clrGreen
-                try { $script:trayIcon.ShowBalloonTip(5000,"EntryPass Sync","Sync complete: $msg",[System.Windows.Forms.ToolTipIcon]::Info) } catch {}
-            } else {
-                $script:lblSyncStatus.Text      = "Sync complete"
-                $script:lblSyncStatus.ForeColor = $clrGreen
-                try { $script:trayIcon.ShowBalloonTip(3000,"EntryPass Sync","Sync complete",[System.Windows.Forms.ToolTipIcon]::Info) } catch {}
-            }
+            $script:lblSyncStatus.Text      = "Sync complete"
+            $script:lblSyncStatus.ForeColor = $clrGreen
+            try { $script:trayIcon.ShowBalloonTip(3000,"EntryPass Sync","Sync complete",[System.Windows.Forms.ToolTipIcon]::Info) } catch {}
         }
+    } catch {
+        $script:lblSyncStatus.Text      = "Sync error: $($_.Exception.Message)"
+        $script:lblSyncStatus.ForeColor = [System.Drawing.Color]::FromArgb(210,60,60)
+        try { $script:trayIcon.ShowBalloonTip(5000,"EntryPass Sync","Sync failed: $($_.Exception.Message)",[System.Windows.Forms.ToolTipIcon]::Error) } catch {}
+    } finally {
+        $script:syncRunning = $false
+        $script:btnSyncNow.Enabled = $true
         Refresh-Dashboard
-    })
-
-    $bw.RunWorkerAsync()
+    }
 }
 
 # ============================================================
