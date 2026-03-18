@@ -33,7 +33,7 @@
   "databasePath": "",
   "_databasePath": "Path to the EntryPass P1_Server (or database root) folder containing the 'event' subfolder with TRANS.FDB. Example: C:\\EntryPass\\P1_Server. Only used when dataSource is 'database'.",
 
-  "syncDays": 1,
+  "syncDays": 2,
   "_syncDays": "Number of past days to sync when using database mode. 1 = today only. 3 = today + 2 previous days (catch-up). Max 30.",
 
   "firebird": {

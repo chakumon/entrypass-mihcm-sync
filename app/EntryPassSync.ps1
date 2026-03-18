@@ -530,7 +530,7 @@ function Run-FullSync {
     $fbUser     = if ($cfg.firebird -and $cfg.firebird.user)     { $cfg.firebird.user }     else { "SYSDBA" }
     $fbPass     = if ($cfg.firebird -and $cfg.firebird.password) { $cfg.firebird.password } else { "masterkey" }
     $fbLib      = if ($cfg.firebird -and $cfg.firebird.clientLibrary) { $cfg.firebird.clientLibrary } else { "" }
-    $syncDays   = if ($cfg.syncDays -gt 0) { [int]$cfg.syncDays } else { 1 }
+    $syncDays   = if ($cfg.syncDays -gt 0) { [int]$cfg.syncDays } else { 2 }
 
     Add-Content -Path $script:logFile -Value "" -Encoding UTF8
     Add-Content -Path $script:logFile -Value "========================================" -Encoding UTF8
@@ -1553,7 +1553,7 @@ function Load-ConfigToForm {
     $script:txtCfgFbUser.Text  = if ($cfg.firebird -and $cfg.firebird.user)     { $cfg.firebird.user }     else { "SYSDBA" }
     $script:txtCfgFbPass.Text  = if ($cfg.firebird -and $cfg.firebird.password) { $cfg.firebird.password } else { "masterkey" }
     $script:txtCfgFbLib.Text   = if ($cfg.firebird -and $cfg.firebird.clientLibrary) { $cfg.firebird.clientLibrary } else { "" }
-    $syncDays = if ($cfg.syncDays -gt 0) { [int]$cfg.syncDays } else { 1 }
+    $syncDays = if ($cfg.syncDays -gt 0) { [int]$cfg.syncDays } else { 2 }
     $script:numSyncDays.Value  = [Math]::Max(1,[Math]::Min(30,$syncDays))
     Update-DataSourceUI
 }
