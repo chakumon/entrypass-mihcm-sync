@@ -693,7 +693,11 @@ if ($args -contains "-RunSyncOnly") {
 # ============================================================
 $mainForm = New-Object System.Windows.Forms.Form
 $mainForm.SuspendLayout()
-$mainForm.Text            = "EntryPass-MiHCM Sync v1.0"
+$mainForm.Text            = "EntryPass-MiHCM Sync"
+$script:iconPath = Join-Path $script:appDir "dajayana.ico"
+if (Test-Path $script:iconPath) {
+    $mainForm.Icon = New-Object System.Drawing.Icon($script:iconPath)
+}
 $mainForm.Size            = New-Object System.Drawing.Size(900,620)
 $mainForm.MinimumSize     = New-Object System.Drawing.Size(900,620)
 $mainForm.StartPosition   = "CenterScreen"
@@ -1408,7 +1412,11 @@ $script:trayIcon.Visible = $true
 
 # Use built-in app icon
 try {
-    $script:trayIcon.Icon = [System.Drawing.SystemIcons]::Application
+    if (Test-Path $script:iconPath) {
+        $script:trayIcon.Icon = New-Object System.Drawing.Icon($script:iconPath)
+    } else {
+        $script:trayIcon.Icon = [System.Drawing.SystemIcons]::Application
+    }
 } catch {}
 
 $trayMenu = New-Object System.Windows.Forms.ContextMenuStrip
