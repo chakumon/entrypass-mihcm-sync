@@ -600,8 +600,8 @@ function Install-SyncTask {
       <StartBoundary>2024-01-01T06:00:00</StartBoundary>
     </CalendarTrigger>
   </Triggers>
-  <Principals><Principal id="Author"><LogonType>S4U</LogonType><RunLevel>LeastPrivilege</RunLevel></Principal></Principals>
-  <Settings><MultipleInstancesPolicy>IgnoreNew</MultipleInstancesPolicy><DisallowStartIfOnBatteries>false</DisallowStartIfOnBatteries><StopIfGoingOnBatteries>false</StopIfGoingOnBatteries><ExecutionTimeLimit>PT1H</ExecutionTimeLimit><Priority>7</Priority></Settings>
+  <Principals><Principal id="Author"><UserId>S-1-5-18</UserId><LogonType>Password</LogonType><RunLevel>HighestAvailable</RunLevel></Principal></Principals>
+  <Settings><MultipleInstancesPolicy>IgnoreNew</MultipleInstancesPolicy><DisallowStartIfOnBatteries>false</DisallowStartIfOnBatteries><StopIfGoingOnBatteries>false</StopIfGoingOnBatteries><ExecutionTimeLimit>PT1H</ExecutionTimeLimit><Priority>7</Priority><StartWhenAvailable>true</StartWhenAvailable><RestartOnFailure><Interval>PT5M</Interval><Count>3</Count></RestartOnFailure></Settings>
   <Actions><Exec><Command>$psExe</Command><Arguments>$args</Arguments><WorkingDirectory>$($script:appDir)</WorkingDirectory></Exec></Actions>
 </Task>
 "@
