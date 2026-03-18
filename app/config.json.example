@@ -24,7 +24,7 @@
   "locationDesc": "Miri Pujut Office",
   "_locationDesc": "Human-readable location name. Used in logs and Task Scheduler task name. Optional.",
 
-  "dataSource": "file",
+  "dataSource": "database",
   "_dataSource": "Data source mode. 'file' = read DATA*.txt exports (default). 'database' = read directly from Firebird TRANS.FDB.",
 
   "sourceFolder": "C:\\EntryPass\\Export",

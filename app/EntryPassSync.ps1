@@ -530,7 +530,7 @@ function Run-FullSync {
     $srcFolder  = $cfg.sourceFolder
     $batchSz    = if ($cfg.batchSize -gt 0) { [int]$cfg.batchSize } else { 80 }
     $licKey     = $cfg.licenseKey
-    $dataSource = if ($cfg.dataSource)    { $cfg.dataSource }    else { "file" }
+    $dataSource = if ($cfg.dataSource)    { $cfg.dataSource }    else { "database" }
     $dbPath     = $cfg.databasePath
     $fbUser     = if ($cfg.firebird -and $cfg.firebird.user)     { $cfg.firebird.user }     else { "SYSDBA" }
     $fbPass     = if ($cfg.firebird -and $cfg.firebird.password) { $cfg.firebird.password } else { "masterkey" }
@@ -1090,7 +1090,7 @@ $cfgY += 26
 $script:rdoFileMode = New-Object System.Windows.Forms.RadioButton
 $script:rdoFileMode.Text     = "File-based (DATA*.txt) -- reads exported text files from EntryPass"
 $script:rdoFileMode.Font     = New-Object System.Drawing.Font("Segoe UI",9)
-$script:rdoFileMode.Checked  = $true
+$script:rdoFileMode.Checked  = $false
 $script:rdoFileMode.Location = New-Object System.Drawing.Point(4,$cfgY)
 $script:rdoFileMode.Size     = New-Object System.Drawing.Size(619,22)
 $cfgScroll.Controls.Add($script:rdoFileMode)
@@ -1099,6 +1099,7 @@ $cfgY += 26
 $script:rdoDbMode = New-Object System.Windows.Forms.RadioButton
 $script:rdoDbMode.Text     = "Database Direct (Firebird) -- reads attendance directly from TRANS.FDB"
 $script:rdoDbMode.Font     = New-Object System.Drawing.Font("Segoe UI",9)
+$script:rdoDbMode.Checked  = $true
 $script:rdoDbMode.Location = New-Object System.Drawing.Point(4,$cfgY)
 $script:rdoDbMode.Size     = New-Object System.Drawing.Size(619,22)
 $cfgScroll.Controls.Add($script:rdoDbMode)
