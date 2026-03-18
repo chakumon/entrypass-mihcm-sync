@@ -1954,9 +1954,8 @@ $script:btnOpenNotepad.add_Click({
 # FORM EVENTS
 # ============================================================
 $mainForm.add_FormClosing({
-    param($sender,$e)
     if (-not $script:reallyExit) {
-        $e.Cancel = $true
+        $_.Cancel = $true
         $mainForm.Hide()
         try { $script:trayIcon.ShowBalloonTip(2000,"EntryPass Sync","Running in the system tray. Double-click to restore.",[System.Windows.Forms.ToolTipIcon]::Info) } catch {}
     } else {
