@@ -56,7 +56,7 @@ function Load-AppConfig {
 }
 
 function Save-AppConfig {
-    param([ordered]$Cfg)
+    param($Cfg)
     $json = $Cfg | ConvertTo-Json -Depth 5
     [System.IO.File]::WriteAllText($script:configFile, $json, [System.Text.Encoding]::UTF8)
 }
