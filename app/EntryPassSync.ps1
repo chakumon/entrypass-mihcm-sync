@@ -1912,7 +1912,7 @@ $script:btnTestConn.add_Click({
     # Test 2: Firebird DB
     $dbPath = $script:txtCfgDbPath.Text.Trim()
     $fbUser = $script:txtCfgFbUser.Text.Trim()
-    $fbPwd  = $script:txtCfgFbPwd.Text.Trim()
+    $fbPwd  = $script:txtCfgFbPass.Text.Trim()
     $fbLib  = $script:txtCfgFbLib.Text.Trim()
     $dbStatus = ""
     if ([string]::IsNullOrWhiteSpace($dbPath)) {
