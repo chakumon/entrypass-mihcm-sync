@@ -2,6 +2,17 @@
 
 All notable changes to EntryPassSync will be documented in this file.
 
+## [1.1.2] - 2026-03-19
+
+### Added
+- Live countdown timer on dashboard: "Next sync: MM:SS"
+- Countdown updates every second
+
+### Fixed
+- Tray icon now uses proper ICO format (was PNG in ICO wrapper)
+- Tray icon fallback if custom icon fails to load
+- Minimize to tray on window close (event args fix)
+
 ## [1.1.1] - 2026-03-19
 
 ### Added

@@ -839,9 +839,17 @@ $script:lblLastSync = New-Object System.Windows.Forms.Label
 $script:lblLastSync.Text      = "Last sync: Never"
 $script:lblLastSync.Font      = New-Object System.Drawing.Font("Segoe UI",8)
 $script:lblLastSync.ForeColor = $clrTextDim
-$script:lblLastSync.Location  = New-Object System.Drawing.Point(440,42)
+$script:lblLastSync.Location  = New-Object System.Drawing.Point(440,36)
 $script:lblLastSync.Size      = New-Object System.Drawing.Size(200,18)
 $statusCard.Controls.Add($script:lblLastSync)
+
+$script:lblNextSync = New-Object System.Windows.Forms.Label
+$script:lblNextSync.Text      = "Next sync: --:--"
+$script:lblNextSync.Font      = New-Object System.Drawing.Font("Segoe UI",8)
+$script:lblNextSync.ForeColor = $clrTextDim
+$script:lblNextSync.Location  = New-Object System.Drawing.Point(440,54)
+$script:lblNextSync.Size      = New-Object System.Drawing.Size(200,18)
+$statusCard.Controls.Add($script:lblNextSync)
 
 # Stats row
 $statsCard = New-Object System.Windows.Forms.Panel
@@ -2077,6 +2085,7 @@ $script:startupTimer.Start()
 # ============================================================
 # BUILT-IN SYNC TIMER (syncs every 15 minutes while app is open)
 # ============================================================
+$script:nextSyncTime = (Get-Date).AddMinutes(15)
 $script:syncTimer = New-Object System.Windows.Forms.Timer
 $script:syncTimer.Interval = 15 * 60 * 1000  # 15 minutes in ms
 $script:syncTimer.add_Tick({
@@ -2084,8 +2093,24 @@ $script:syncTimer.add_Tick({
         Write-SyncLog "Auto-sync triggered (15-minute interval)"
         Start-SyncBackground
     }
+    $script:nextSyncTime = (Get-Date).AddMinutes(15)
 })
 $script:syncTimer.Start()
+
+# Countdown display timer (updates every second)
+$script:countdownTimer = New-Object System.Windows.Forms.Timer
+$script:countdownTimer.Interval = 1000
+$script:countdownTimer.add_Tick({
+    $remaining = $script:nextSyncTime - (Get-Date)
+    if ($remaining.TotalSeconds -le 0) {
+        $script:lblNextSync.Text = "Next sync: syncing..."
+    } else {
+        $mins = [math]::Floor($remaining.TotalMinutes)
+        $secs = $remaining.Seconds
+        $script:lblNextSync.Text = "Next sync: {0:D2}:{1:D2}" -f $mins, $secs
+    }
+})
+$script:countdownTimer.Start()
 
 # Also add to Windows startup so it launches automatically
 $startupKey = "HKLM:\Software\Microsoft\Windows\CurrentVersion\Run"
