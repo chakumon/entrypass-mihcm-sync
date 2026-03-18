@@ -818,20 +818,12 @@ $statusCard.Size      = New-Object System.Drawing.Size(652,78)
 $statusCard.Anchor     = "Top,Left,Right"
 $panelDashboard.Controls.Add($statusCard)
 
-$lblStatusTitle = New-Object System.Windows.Forms.Label
-$lblStatusTitle.Text      = "Status"
-$lblStatusTitle.Font      = New-Object System.Drawing.Font("Segoe UI",8)
-$lblStatusTitle.ForeColor = $clrTextDim
-$lblStatusTitle.Location  = New-Object System.Drawing.Point(14,10)
-$lblStatusTitle.Size      = New-Object System.Drawing.Size(200,18)
-$statusCard.Controls.Add($lblStatusTitle)
-
 $script:lblStatus = New-Object System.Windows.Forms.Label
 $script:lblStatus.Text      = "Not Configured"
 $script:lblStatus.Font      = New-Object System.Drawing.Font("Segoe UI",13,[System.Drawing.FontStyle]::Bold)
 $script:lblStatus.ForeColor = $clrGrey
-$script:lblStatus.Location  = New-Object System.Drawing.Point(14,30)
-$script:lblStatus.Size      = New-Object System.Drawing.Size(400,32)
+$script:lblStatus.Location  = New-Object System.Drawing.Point(14,16)
+$script:lblStatus.Size      = New-Object System.Drawing.Size(450,38)
 $statusCard.Controls.Add($script:lblStatus)
 
 $script:lblLastSync = New-Object System.Windows.Forms.Label
@@ -1536,10 +1528,10 @@ function Refresh-Dashboard {
     if ($cfg -and -not [string]::IsNullOrWhiteSpace($cfg.licenseKey) -and -not [string]::IsNullOrWhiteSpace($cfg.primaryKey)) {
         $dataSource = if ($cfg.dataSource) { $cfg.dataSource } else { "file" }
         if ($dataSource -eq "database") {
-            $script:lblStatus.Text      = "Database Direct Mode - Connected to TRANS.FDB"
+            $script:lblStatus.Text      = "Connected & Licensed -- Database Direct Mode"
             $script:lblStatus.ForeColor = $script:clrBlue
         } else {
-            $script:lblStatus.Text      = "Connected & Licensed"
+            $script:lblStatus.Text      = "Connected & Licensed -- File Mode"
             $script:lblStatus.ForeColor = $script:clrGreen
         }
     } else {
