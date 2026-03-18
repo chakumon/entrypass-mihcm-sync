@@ -1,7 +1,7 @@
 {
   "_comment": "EntryPass-MiHCM Sync -- Configuration File",
   "_comment2": "Copy this file to config.json and fill in your values.",
-  "_comment3": "Run setup.ps1 to configure via GUI (recommended).",
+  "_comment3": "Run EntryPassSync.ps1 to configure via GUI (recommended).",
 
   "licenseKey": "DAJAYANA-XXXX-XXXX-XXXX",
   "_licenseKey": "Your license key from Dajayana Trading. Required for the app to run.",
@@ -24,8 +24,26 @@
   "locationDesc": "Miri Pujut Office",
   "_locationDesc": "Human-readable location name. Used in logs and Task Scheduler task name. Optional.",
 
+  "dataSource": "file",
+  "_dataSource": "Data source mode. 'file' = read DATA*.txt exports (default). 'database' = read directly from Firebird TRANS.FDB.",
+
   "sourceFolder": "C:\\EntryPass\\Export",
-  "_sourceFolder": "Full path to the folder where EntryPass exports DATA*.txt files. The sync engine scans this folder on every run.",
+  "_sourceFolder": "Full path to the folder where EntryPass exports DATA*.txt files. Only used when dataSource is 'file'.",
+
+  "databasePath": "",
+  "_databasePath": "Path to the EntryPass P1_Server (or database root) folder containing the 'event' subfolder with TRANS.FDB. Example: C:\\EntryPass\\P1_Server. Only used when dataSource is 'database'.",
+
+  "syncDays": 1,
+  "_syncDays": "Number of past days to sync when using database mode. 1 = today only. 3 = today + 2 previous days (catch-up). Max 30.",
+
+  "firebird": {
+    "user": "SYSDBA",
+    "_user": "Firebird database user. Default is SYSDBA.",
+    "password": "masterkey",
+    "_password": "Firebird database password. Default is masterkey.",
+    "clientLibrary": "",
+    "_clientLibrary": "Optional path to FirebirdSql.Data.FirebirdClient.dll or fbclient.dll. Leave empty for auto-detection. The app searches: script folder, databasePath folder, then the system GAC."
+  },
 
   "batchSize": 80,
   "_batchSize": "Number of records per API upload request. MiHCM supports max 100. Default 80 for safety margin."

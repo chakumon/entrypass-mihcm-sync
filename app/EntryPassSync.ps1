@@ -64,9 +64,14 @@ function Save-AppConfig {
 function Is-Configured {
     $cfg = Load-AppConfig
     if (-not $cfg) { return $false }
-    $req = @("licenseKey","primaryKey","secretKey","location","sourceFolder")
+    $req = @("licenseKey","primaryKey","secretKey","location")
     foreach ($f in $req) {
         if ([string]::IsNullOrWhiteSpace($cfg.$f)) { return $false }
+    }
+    if ($cfg.dataSource -eq "database") {
+        if ([string]::IsNullOrWhiteSpace($cfg.databasePath)) { return $false }
+    } else {
+        if ([string]::IsNullOrWhiteSpace($cfg.sourceFolder)) { return $false }
     }
     return $true
 }
@@ -276,6 +281,193 @@ function Convert-EntryPassFile {
     return $records
 }
 
+function Load-FirebirdAssembly {
+    param([string]$DbPath, [string]$ClientLibrary)
+    # Try explicit clientLibrary path first, then search common locations
+    $searchPaths = @()
+    if (-not [string]::IsNullOrWhiteSpace($ClientLibrary) -and (Test-Path $ClientLibrary)) {
+        $searchPaths += $ClientLibrary
+    }
+    $searchPaths += @(
+        (Join-Path $script:appDir "FirebirdSql.Data.FirebirdClient.dll"),
+        (Join-Path $DbPath "FirebirdSql.Data.FirebirdClient.dll")
+    )
+    foreach ($path in $searchPaths) {
+        if ([string]::IsNullOrWhiteSpace($path)) { continue }
+        try {
+            [void][System.Reflection.Assembly]::LoadFrom($path)
+            Write-SyncLog "Firebird: Loaded .NET provider from $path"
+            return "dotnet"
+        } catch { continue }
+    }
+    # Try GAC
+    try {
+        [void][System.Reflection.Assembly]::Load("FirebirdSql.Data.FirebirdClient")
+        Write-SyncLog "Firebird: Loaded .NET provider from GAC"
+        return "dotnet"
+    } catch {}
+    # Try ODBC as fallback
+    try {
+        $testConn = New-Object System.Data.Odbc.OdbcConnection
+        $testConn.Dispose()
+        Write-SyncLog "Firebird: Will use ODBC driver (FirebirdSql.Data.FirebirdClient.dll not found)"
+        return "odbc"
+    } catch {}
+    Write-SyncLog "Firebird: No .NET provider or ODBC available."
+    return $null
+}
+
+function Read-FirebirdDatabase {
+    param(
+        [string]$DbPath,
+        [string]$FbUser,
+        [string]$FbPassword,
+        [string]$ClientLibrary,
+        [string]$LocationCode,
+        [int]$SyncDays = 1
+    )
+
+    $allRecords    = @()
+    $totalRaw      = 0
+    $totalValid    = 0
+    $totalSkipped  = 0
+
+    $dbFile = Join-Path $DbPath "event\TRANS.FDB"
+    if (-not (Test-Path $dbFile)) {
+        Write-SyncLog "ERROR: Database not found at $dbFile"
+        return $null
+    }
+    Write-SyncLog "Data source: Database Direct (TRANS.FDB)"
+    Write-SyncLog "Database   : $dbFile"
+
+    $providerType = Load-FirebirdAssembly -DbPath $DbPath -ClientLibrary $ClientLibrary
+    if (-not $providerType) {
+        Write-SyncLog "ERROR: Cannot connect to Firebird -- no driver available."
+        Write-SyncLog "  Install FirebirdSql.Data.FirebirdClient NuGet package or place the DLL next to this script."
+        return $null
+    }
+
+    for ($dayOffset = 0; $dayOffset -lt $SyncDays; $dayOffset++) {
+        $targetDate  = (Get-Date).AddDays(-$dayOffset)
+        $dateStrTbl  = $targetDate.ToString("yyyyMMdd")
+        $tableName   = "STT$dateStrTbl"
+        Write-SyncLog "Querying table $tableName..."
+
+        $conn = $null
+        $reader = $null
+        try {
+            if ($providerType -eq "dotnet") {
+                # ServerType=1 = embedded (local file), ServerType=0 = remote
+                $connStr = "Database=$dbFile;User=$FbUser;Password=$FbPassword;ServerType=1;Charset=UTF8"
+                $conn    = New-Object FirebirdSql.Data.FirebirdClient.FbConnection($connStr)
+                $conn.Open()
+                $cmd = $conn.CreateCommand()
+                $cmd.CommandText = "SELECT DATA FROM $tableName WHERE DATA LIKE '0;%'"
+                $reader = $cmd.ExecuteReader()
+            } else {
+                # ODBC fallback
+                $connStr = "Driver={Firebird/InterBase(r) driver};Database=$dbFile;UID=$FbUser;PWD=$FbPassword;CHARSET=UTF8"
+                $conn    = New-Object System.Data.Odbc.OdbcConnection($connStr)
+                $conn.Open()
+                $cmd = $conn.CreateCommand()
+                $cmd.CommandText = "SELECT DATA FROM $tableName WHERE DATA LIKE '0;%'"
+                $reader = $cmd.ExecuteReader()
+            }
+
+            $dayRaw   = 0
+            $dayValid = 0
+            $daySkip  = 0
+
+            while ($reader.Read()) {
+                $dataStr = $reader.GetString(0)
+                $dayRaw++
+                $parts = $dataStr -split ';'
+                if ($parts.Count -lt 9) { $daySkip++; continue }
+                if ($parts[0].Trim() -ne '0')  { $daySkip++; continue }
+                if ($parts[3].Trim() -ne 'Ca') { $daySkip++; continue }
+                $cardNo = $parts[8].Trim()
+                if ([string]::IsNullOrWhiteSpace($cardNo)) { $daySkip++; continue }
+                # Remove leading zeros from card number (or keep as-is -- MiHCM uses TextCardNumber)
+                $rawDate = $parts[1].Trim()  # YYYY/MM/DD
+                $rawTime = $parts[2].Trim()  # HH:MM:SS
+                # Convert date from YYYY/MM/DD to YYYY-MM-DD
+                $dateFmt = $rawDate -replace '(\d{4})/(\d{2})/(\d{2})','$1-$2-$3'
+                $dateFull = "$dateFmt 00:00:00.000"
+                if ($rawTime -match '^\d{2}:\d{2}:\d{2}$') {
+                    $timeFull = "$dateFmt $rawTime.000"
+                } else {
+                    $timeFull = "$dateFmt $($rawTime):00.000"
+                }
+                $allRecords += @{
+                    "Date"           = $dateFull
+                    "Time"           = $timeFull
+                    "CardNumber"     = 0
+                    "Node"           = 0
+                    "TextCardNumber" = $cardNo
+                    "Clock"          = 0
+                    "TrType"         = 0
+                    "Location"       = $LocationCode
+                }
+                $dayValid++
+            }
+            $daySkip = $dayRaw - $dayValid
+            $totalRaw    += $dayRaw
+            $totalValid  += $dayValid
+            $totalSkipped += $daySkip
+            Write-SyncLog "Found $dayRaw raw events, $dayValid valid card swipes"
+            Write-SyncLog "Skipping $daySkip non-attendance events (door opens, etc.)"
+        } catch {
+            Write-SyncLog "ERROR querying ${tableName}: $($_.Exception.Message)"
+            # Table may not exist for this date -- not a fatal error
+        } finally {
+            if ($reader) { try { $reader.Close() } catch {} }
+            if ($conn)   { try { $conn.Close(); $conn.Dispose() } catch {} }
+        }
+    }
+
+    Write-SyncLog "Database read complete -- Total raw:$totalRaw Valid:$totalValid Skipped:$totalSkipped"
+    return $allRecords
+}
+
+function Test-FirebirdConnection {
+    param([string]$DbPath, [string]$FbUser, [string]$FbPassword, [string]$ClientLibrary)
+    $dbFile = Join-Path $DbPath "event\TRANS.FDB"
+    if (-not (Test-Path $dbFile)) {
+        return @{ Success=$false; Message="Database not found: $dbFile" }
+    }
+    $providerType = Load-FirebirdAssembly -DbPath $DbPath -ClientLibrary $ClientLibrary
+    if (-not $providerType) {
+        return @{ Success=$false; Message="No Firebird driver found. Place FirebirdSql.Data.FirebirdClient.dll next to this script, or install the ODBC driver." }
+    }
+    $dateStrTbl = (Get-Date).ToString("yyyyMMdd")
+    $tableName  = "STT$dateStrTbl"
+    $conn   = $null
+    $reader = $null
+    try {
+        if ($providerType -eq "dotnet") {
+            $connStr = "Database=$dbFile;User=$FbUser;Password=$FbPassword;ServerType=1;Charset=UTF8"
+            $conn    = New-Object FirebirdSql.Data.FirebirdClient.FbConnection($connStr)
+        } else {
+            $connStr = "Driver={Firebird/InterBase(r) driver};Database=$dbFile;UID=$FbUser;PWD=$FbPassword;CHARSET=UTF8"
+            $conn    = New-Object System.Data.Odbc.OdbcConnection($connStr)
+        }
+        $conn.Open()
+        $cmd = $conn.CreateCommand()
+        $cmd.CommandText = "SELECT COUNT(*) FROM $tableName"
+        $count = $cmd.ExecuteScalar()
+        return @{ Success=$true; Message="Connected - $tableName found, $count records" }
+    } catch {
+        $msg = $_.Exception.Message
+        if ($msg -match "Table unknown" -or $msg -match "object.*not found" -or $msg -match "335544580") {
+            return @{ Success=$true; Message="Connected to TRANS.FDB (no table $tableName yet -- no data for today)" }
+        }
+        return @{ Success=$false; Message="Connection failed: $msg" }
+    } finally {
+        if ($reader) { try { $reader.Close() } catch {} }
+        if ($conn)   { try { $conn.Close(); $conn.Dispose() } catch {} }
+    }
+}
+
 function Run-FullSync {
     param([System.ComponentModel.BackgroundWorker]$Worker)
     $script:bgWorker = $Worker
@@ -283,22 +475,32 @@ function Run-FullSync {
     $cfg = Load-AppConfig
     if (-not $cfg) { Write-SyncLog "ERROR: config.json not found."; return @{ Success=$false; Stats=@{Saved=0;Skipped=0;Failed=0} } }
 
-    $baseUrl   = ($cfg.apiEndpoint).TrimEnd("/")
-    $primKey   = $cfg.primaryKey
-    $secKey    = $cfg.secretKey
-    $location  = $cfg.location
-    $locDesc   = if ($cfg.locationDesc) { $cfg.locationDesc } else { $location }
-    $client    = if ($cfg.clientName)   { $cfg.clientName }   else { "Unknown" }
-    $srcFolder = $cfg.sourceFolder
-    $batchSz   = if ($cfg.batchSize -gt 0) { [int]$cfg.batchSize } else { 80 }
-    $licKey    = $cfg.licenseKey
+    $baseUrl    = ($cfg.apiEndpoint).TrimEnd("/")
+    $primKey    = $cfg.primaryKey
+    $secKey     = $cfg.secretKey
+    $location   = $cfg.location
+    $locDesc    = if ($cfg.locationDesc)  { $cfg.locationDesc }  else { $location }
+    $client     = if ($cfg.clientName)    { $cfg.clientName }    else { "Unknown" }
+    $srcFolder  = $cfg.sourceFolder
+    $batchSz    = if ($cfg.batchSize -gt 0) { [int]$cfg.batchSize } else { 80 }
+    $licKey     = $cfg.licenseKey
+    $dataSource = if ($cfg.dataSource)    { $cfg.dataSource }    else { "file" }
+    $dbPath     = $cfg.databasePath
+    $fbUser     = if ($cfg.firebird -and $cfg.firebird.user)     { $cfg.firebird.user }     else { "SYSDBA" }
+    $fbPass     = if ($cfg.firebird -and $cfg.firebird.password) { $cfg.firebird.password } else { "masterkey" }
+    $fbLib      = if ($cfg.firebird -and $cfg.firebird.clientLibrary) { $cfg.firebird.clientLibrary } else { "" }
+    $syncDays   = if ($cfg.syncDays -gt 0) { [int]$cfg.syncDays } else { 1 }
 
     Add-Content -Path $script:logFile -Value "" -Encoding UTF8
     Add-Content -Path $script:logFile -Value "========================================" -Encoding UTF8
     Write-SyncLog "EntryPass-MiHCM Sync"
     Write-SyncLog "Client   : $client"
     Write-SyncLog "Location : $location ($locDesc)"
-    Write-SyncLog "Source   : $srcFolder"
+    if ($dataSource -eq "database") {
+        Write-SyncLog "Source   : Database Direct ($dbPath)"
+    } else {
+        Write-SyncLog "Source   : $srcFolder"
+    }
     Write-SyncLog "Endpoint : $baseUrl"
 
     $licOk = Test-LicenseKey -Key $licKey
@@ -307,13 +509,6 @@ function Run-FullSync {
         return @{ Success=$false; Stats=@{Saved=0;Skipped=0;Failed=0} }
     }
 
-    $files = Get-ChildItem -Path $srcFolder -Filter "DATA*.txt" -ErrorAction SilentlyContinue
-    if (-not $files -or $files.Count -eq 0) {
-        Write-SyncLog "No DATA*.txt files in $srcFolder."
-        return @{ Success=$true; Stats=@{Saved=0;Skipped=0;Failed=0} }
-    }
-    Write-SyncLog "Found $($files.Count) file(s)."
-
     $token = Get-MiHCMToken -BaseUrl $baseUrl -PrimaryKey $primKey -SecretKey $secKey
     if (-not $token) {
         Write-SyncLog "Cannot get token -- check API keys."
@@ -321,10 +516,27 @@ function Run-FullSync {
     }
 
     $allRecords = @()
-    foreach ($file in $files) {
-        $recs = Convert-EntryPassFile -InputFile $file.FullName -LocationCode $location
-        if ($recs) { $allRecords += $recs }
-        Write-SyncLog ""
+
+    if ($dataSource -eq "database") {
+        # ---- DATABASE DIRECT MODE ----
+        $allRecords = Read-FirebirdDatabase -DbPath $dbPath -FbUser $fbUser -FbPassword $fbPass -ClientLibrary $fbLib -LocationCode $location -SyncDays $syncDays
+        if ($null -eq $allRecords) {
+            Write-SyncLog "Database read failed. Aborting."
+            return @{ Success=$false; Stats=@{Saved=0;Skipped=0;Failed=0} }
+        }
+    } else {
+        # ---- FILE-BASED MODE (original behavior) ----
+        $files = Get-ChildItem -Path $srcFolder -Filter "DATA*.txt" -ErrorAction SilentlyContinue
+        if (-not $files -or $files.Count -eq 0) {
+            Write-SyncLog "No DATA*.txt files in $srcFolder."
+            return @{ Success=$true; Stats=@{Saved=0;Skipped=0;Failed=0} }
+        }
+        Write-SyncLog "Found $($files.Count) file(s)."
+        foreach ($file in $files) {
+            $recs = Convert-EntryPassFile -InputFile $file.FullName -LocationCode $location
+            if ($recs) { $allRecords += $recs }
+            Write-SyncLog ""
+        }
     }
 
     if ($allRecords.Count -eq 0) {
@@ -335,12 +547,15 @@ function Run-FullSync {
     Write-SyncLog "Total records: $($allRecords.Count)"
     $stats = Upload-Records -BaseUrl $baseUrl -PrimaryKey $primKey -SecretKey $secKey -Token $token -Records $allRecords -BatchSize $batchSz
 
-    if ($stats.Failed -eq 0) {
-        foreach ($file in $files) {
-            try { Remove-Item $file.FullName -Force; Write-SyncLog "Deleted: $($file.Name)" } catch { Write-SyncLog "Cannot delete $($file.Name): $_" }
+    if ($dataSource -ne "database") {
+        # Only delete source files for file-based mode
+        if ($stats.Failed -eq 0) {
+            foreach ($file in $files) {
+                try { Remove-Item $file.FullName -Force; Write-SyncLog "Deleted: $($file.Name)" } catch { Write-SyncLog "Cannot delete $($file.Name): $_" }
+            }
+        } else {
+            Write-SyncLog "WARNING: $($stats.Failed) failed -- source files NOT deleted."
         }
-    } else {
-        Write-SyncLog "WARNING: $($stats.Failed) failed -- source files NOT deleted."
     }
 
     $result = if ($stats.Failed -eq 0 -and $stats.Saved -gt 0) { "SUCCESS" }
@@ -800,6 +1015,129 @@ $script:btnBrowseFolder.Cursor    = [System.Windows.Forms.Cursors]::Hand
 $cfgScroll.Controls.Add($script:btnBrowseFolder)
 $cfgY += 38
 
+# ---- DATA SOURCE MODE SECTION ----
+$sepDsrc = New-Object System.Windows.Forms.Label
+$sepDsrc.BackColor = [System.Drawing.Color]::FromArgb(210,215,225)
+$sepDsrc.Location  = New-Object System.Drawing.Point(4,$cfgY)
+$sepDsrc.Size      = New-Object System.Drawing.Size(619,1)
+$cfgScroll.Controls.Add($sepDsrc)
+$cfgY += 8
+
+$lblDsrcHdr = New-Object System.Windows.Forms.Label
+$lblDsrcHdr.Text      = "Data Source Mode"
+$lblDsrcHdr.Font      = New-Object System.Drawing.Font("Segoe UI",8.5,[System.Drawing.FontStyle]::Bold)
+$lblDsrcHdr.ForeColor = $clrTextDim
+$lblDsrcHdr.Location  = New-Object System.Drawing.Point(4,$cfgY)
+$lblDsrcHdr.Size      = New-Object System.Drawing.Size(619,20)
+$cfgScroll.Controls.Add($lblDsrcHdr)
+$cfgY += 26
+
+$script:rdoFileMode = New-Object System.Windows.Forms.RadioButton
+$script:rdoFileMode.Text     = "File-based (DATA*.txt) -- reads exported text files from EntryPass"
+$script:rdoFileMode.Font     = New-Object System.Drawing.Font("Segoe UI",9)
+$script:rdoFileMode.Checked  = $true
+$script:rdoFileMode.Location = New-Object System.Drawing.Point(4,$cfgY)
+$script:rdoFileMode.Size     = New-Object System.Drawing.Size(619,22)
+$cfgScroll.Controls.Add($script:rdoFileMode)
+$cfgY += 26
+
+$script:rdoDbMode = New-Object System.Windows.Forms.RadioButton
+$script:rdoDbMode.Text     = "Database Direct (Firebird) -- reads attendance directly from TRANS.FDB"
+$script:rdoDbMode.Font     = New-Object System.Drawing.Font("Segoe UI",9)
+$script:rdoDbMode.Location = New-Object System.Drawing.Point(4,$cfgY)
+$script:rdoDbMode.Size     = New-Object System.Drawing.Size(619,22)
+$cfgScroll.Controls.Add($script:rdoDbMode)
+$cfgY += 30
+
+# Database path row
+$lblDbPath = New-Object System.Windows.Forms.Label
+$lblDbPath.Text      = "Database Path"
+$lblDbPath.Font      = New-Object System.Drawing.Font("Segoe UI",8.5)
+$lblDbPath.ForeColor = $clrTextDim
+$lblDbPath.Location  = New-Object System.Drawing.Point(4,$cfgY)
+$lblDbPath.Size      = New-Object System.Drawing.Size(175,20)
+$cfgScroll.Controls.Add($lblDbPath)
+
+$script:txtCfgDbPath = New-Object System.Windows.Forms.TextBox
+$script:txtCfgDbPath.Location = New-Object System.Drawing.Point(183,$cfgY)
+$script:txtCfgDbPath.Size     = New-Object System.Drawing.Size(360,28)
+$script:txtCfgDbPath.Font     = New-Object System.Drawing.Font("Segoe UI",9)
+$cfgScroll.Controls.Add($script:txtCfgDbPath)
+
+$script:btnBrowseDbPath = New-Object System.Windows.Forms.Button
+$script:btnBrowseDbPath.Text      = "Browse"
+$script:btnBrowseDbPath.Font      = New-Object System.Drawing.Font("Segoe UI",8.5)
+$script:btnBrowseDbPath.FlatStyle = "Flat"
+$script:btnBrowseDbPath.BackColor = [System.Drawing.Color]::FromArgb(230,235,240)
+$script:btnBrowseDbPath.Location  = New-Object System.Drawing.Point(549,$cfgY)
+$script:btnBrowseDbPath.Size      = New-Object System.Drawing.Size(74,28)
+$script:btnBrowseDbPath.Cursor    = [System.Windows.Forms.Cursors]::Hand
+$cfgScroll.Controls.Add($script:btnBrowseDbPath)
+$cfgY += 38
+
+# Firebird username
+$script:txtCfgFbUser = New-Object System.Windows.Forms.TextBox
+Add-CfgField "Firebird Username" $script:txtCfgFbUser
+$script:txtCfgFbUser.Text = "SYSDBA"
+
+# Firebird password
+$script:txtCfgFbPass = New-Object System.Windows.Forms.TextBox
+$script:txtCfgFbPass.UseSystemPasswordChar = $true
+Add-CfgField "Firebird Password" $script:txtCfgFbPass
+$script:txtCfgFbPass.Text = "masterkey"
+
+# Firebird client library (optional)
+$script:txtCfgFbLib = New-Object System.Windows.Forms.TextBox
+Add-CfgField "FB Client DLL (optional)" $script:txtCfgFbLib
+
+# Sync days spinner
+$script:numSyncDays = New-Object System.Windows.Forms.NumericUpDown
+$script:numSyncDays.Minimum  = 1
+$script:numSyncDays.Maximum  = 30
+$script:numSyncDays.Value    = 1
+$script:numSyncDays.DecimalPlaces = 0
+Add-CfgField "Sync Days (DB mode)" $script:numSyncDays 28
+
+# Test DB Connection button + status label
+$script:btnTestDbConn = New-Object System.Windows.Forms.Button
+$script:btnTestDbConn.Text      = "Test DB Connection"
+$script:btnTestDbConn.Font      = New-Object System.Drawing.Font("Segoe UI",8.5)
+$script:btnTestDbConn.FlatStyle = "Flat"
+$script:btnTestDbConn.BackColor = [System.Drawing.Color]::FromArgb(230,235,240)
+$script:btnTestDbConn.Location  = New-Object System.Drawing.Point(4,$cfgY)
+$script:btnTestDbConn.Size      = New-Object System.Drawing.Size(160,28)
+$script:btnTestDbConn.Cursor    = [System.Windows.Forms.Cursors]::Hand
+$cfgScroll.Controls.Add($script:btnTestDbConn)
+
+$script:lblDbConnStatus = New-Object System.Windows.Forms.Label
+$script:lblDbConnStatus.Text      = ""
+$script:lblDbConnStatus.Font      = New-Object System.Drawing.Font("Segoe UI",8.5)
+$script:lblDbConnStatus.ForeColor = $clrTextDim
+$script:lblDbConnStatus.Location  = New-Object System.Drawing.Point(172,$cfgY)
+$script:lblDbConnStatus.Size      = New-Object System.Drawing.Size(451,28)
+$cfgScroll.Controls.Add($script:lblDbConnStatus)
+$cfgY += 36
+
+# Helper to show/hide database vs file-mode controls
+function Update-DataSourceUI {
+    $dbMode = $script:rdoDbMode.Checked
+    # File mode controls
+    $script:txtCfgSourceFolder.Enabled = (-not $dbMode)
+    $script:btnBrowseFolder.Enabled    = (-not $dbMode)
+    # DB mode controls
+    $script:txtCfgDbPath.Enabled    = $dbMode
+    $script:btnBrowseDbPath.Enabled  = $dbMode
+    $script:txtCfgFbUser.Enabled    = $dbMode
+    $script:txtCfgFbPass.Enabled    = $dbMode
+    $script:txtCfgFbLib.Enabled     = $dbMode
+    $script:numSyncDays.Enabled     = $dbMode
+    $script:btnTestDbConn.Enabled   = $dbMode
+    $script:lblDbConnStatus.Text    = ""
+}
+
+$script:rdoFileMode.add_CheckedChanged({ Update-DataSourceUI })
+$script:rdoDbMode.add_CheckedChanged({  Update-DataSourceUI })
+
 # Schedule section
 $sepCfg1 = New-Object System.Windows.Forms.Label
 $sepCfg1.BackColor = [System.Drawing.Color]::FromArgb(210,215,225)
@@ -1099,16 +1437,27 @@ foreach ($k in $script:navItems.Keys) {
 function Refresh-Dashboard {
     $cfg = Load-AppConfig
     if ($cfg -and -not [string]::IsNullOrWhiteSpace($cfg.licenseKey) -and -not [string]::IsNullOrWhiteSpace($cfg.primaryKey)) {
-        $script:lblStatus.Text      = "Connected & Licensed"
-        $script:lblStatus.ForeColor = $script:clrGreen
+        $dataSource = if ($cfg.dataSource) { $cfg.dataSource } else { "file" }
+        if ($dataSource -eq "database") {
+            $script:lblStatus.Text      = "Database Direct Mode - Connected to TRANS.FDB"
+            $script:lblStatus.ForeColor = $script:clrBlue
+        } else {
+            $script:lblStatus.Text      = "Connected & Licensed"
+            $script:lblStatus.ForeColor = $script:clrGreen
+        }
     } else {
         $script:lblStatus.Text      = "Not Configured"
         $script:lblStatus.ForeColor = $script:clrGrey
     }
     if ($cfg) {
+        $dataSource = if ($cfg.dataSource) { $cfg.dataSource } else { "file" }
         $script:lblSiteClient.Text   = if ($cfg.clientName)   { $cfg.clientName }   else { "--" }
         $script:lblSiteLocation.Text = if ($cfg.location)     { "$($cfg.location) ($($cfg.locationDesc))" } else { "--" }
-        $script:lblSiteFolder.Text   = if ($cfg.sourceFolder) { $cfg.sourceFolder } else { "--" }
+        if ($dataSource -eq "database") {
+            $script:lblSiteFolder.Text = if ($cfg.databasePath) { "DB: $($cfg.databasePath)" } else { "--" }
+        } else {
+            $script:lblSiteFolder.Text = if ($cfg.sourceFolder) { $cfg.sourceFolder } else { "--" }
+        }
     }
     if ($script:lastStats.Time) {
         $script:lblLastSync.Text    = "Last sync: $($script:lastStats.Time)"
@@ -1141,6 +1490,20 @@ function Load-ConfigToForm {
     if ($cfg.scheduleFrequency -and $freqMap.ContainsKey($cfg.scheduleFrequency)) {
         $script:cmbFrequency.SelectedItem = $freqMap[$cfg.scheduleFrequency]
     }
+    # Database fields
+    $dataSource = if ($cfg.dataSource) { $cfg.dataSource } else { "file" }
+    if ($dataSource -eq "database") {
+        $script:rdoDbMode.Checked   = $true
+    } else {
+        $script:rdoFileMode.Checked = $true
+    }
+    $script:txtCfgDbPath.Text  = if ($cfg.databasePath) { $cfg.databasePath } else { "" }
+    $script:txtCfgFbUser.Text  = if ($cfg.firebird -and $cfg.firebird.user)     { $cfg.firebird.user }     else { "SYSDBA" }
+    $script:txtCfgFbPass.Text  = if ($cfg.firebird -and $cfg.firebird.password) { $cfg.firebird.password } else { "masterkey" }
+    $script:txtCfgFbLib.Text   = if ($cfg.firebird -and $cfg.firebird.clientLibrary) { $cfg.firebird.clientLibrary } else { "" }
+    $syncDays = if ($cfg.syncDays -gt 0) { [int]$cfg.syncDays } else { 1 }
+    $script:numSyncDays.Value  = [Math]::Max(1,[Math]::Min(30,$syncDays))
+    Update-DataSourceUI
 }
 
 # ============================================================
@@ -1154,6 +1517,7 @@ function Get-ConfigFromForm {
         "Every 2 hours"    { "2hour" }
         default            { "30min" }
     }
+    $dataSource = if ($script:rdoDbMode.Checked) { "database" } else { "file" }
     return [ordered]@{
         licenseKey        = $script:txtCfgLicense.Text.Trim()
         primaryKey        = $script:txtCfgPrimary.Text.Trim()
@@ -1163,6 +1527,14 @@ function Get-ConfigFromForm {
         location          = ($script:txtCfgLocation.Text.Trim()).ToUpper()
         locationDesc      = $script:txtCfgLocationDesc.Text.Trim()
         sourceFolder      = $script:txtCfgSourceFolder.Text.Trim()
+        dataSource        = $dataSource
+        databasePath      = $script:txtCfgDbPath.Text.Trim()
+        syncDays          = [int]$script:numSyncDays.Value
+        firebird          = [ordered]@{
+            user          = $script:txtCfgFbUser.Text.Trim()
+            password      = $script:txtCfgFbPass.Text.Trim()
+            clientLibrary = $script:txtCfgFbLib.Text.Trim()
+        }
         batchSize         = 80
         scheduleEnabled   = $script:chkSchedule.Checked
         scheduleFrequency = $freqVal
@@ -1171,16 +1543,26 @@ function Get-ConfigFromForm {
 
 function Validate-CfgForm {
     $req = @(
-        @{Field=$script:txtCfgLicense.Text;     Name="License Key"},
-        @{Field=$script:txtCfgPrimary.Text;     Name="Primary Key"},
-        @{Field=$script:txtCfgSecret.Text;      Name="Secret Key"},
-        @{Field=$script:txtCfgClient.Text;      Name="Client Name"},
-        @{Field=$script:txtCfgLocation.Text;    Name="Location Code"},
-        @{Field=$script:txtCfgSourceFolder.Text;Name="Source Folder"}
+        @{Field=$script:txtCfgLicense.Text; Name="License Key"},
+        @{Field=$script:txtCfgPrimary.Text; Name="Primary Key"},
+        @{Field=$script:txtCfgSecret.Text;  Name="Secret Key"},
+        @{Field=$script:txtCfgClient.Text;  Name="Client Name"},
+        @{Field=$script:txtCfgLocation.Text;Name="Location Code"}
     )
     foreach ($r in $req) {
         if ([string]::IsNullOrWhiteSpace($r.Field)) {
             [System.Windows.Forms.MessageBox]::Show("$($r.Name) is required.", "Validation", "OK", "Warning") | Out-Null
+            return $false
+        }
+    }
+    if ($script:rdoDbMode.Checked) {
+        if ([string]::IsNullOrWhiteSpace($script:txtCfgDbPath.Text)) {
+            [System.Windows.Forms.MessageBox]::Show("Database Path is required when using Database Direct mode.", "Validation", "OK", "Warning") | Out-Null
+            return $false
+        }
+    } else {
+        if ([string]::IsNullOrWhiteSpace($script:txtCfgSourceFolder.Text)) {
+            [System.Windows.Forms.MessageBox]::Show("Source Folder is required when using File-based mode.", "Validation", "OK", "Warning") | Out-Null
             return $false
         }
     }
@@ -1301,7 +1683,7 @@ function Start-SyncBackground {
 # Dashboard: Sync Now
 $script:btnSyncNow.add_Click({ Start-SyncBackground })
 
-# Config: Browse folder
+# Config: Browse folder (file mode)
 $script:btnBrowseFolder.add_Click({
     $dlg = New-Object System.Windows.Forms.FolderBrowserDialog
     $dlg.Description         = "Select folder containing EntryPass DATA*.txt files"
@@ -1311,6 +1693,43 @@ $script:btnBrowseFolder.add_Click({
     }
     if ($dlg.ShowDialog() -eq "OK") {
         $script:txtCfgSourceFolder.Text = $dlg.SelectedPath
+    }
+})
+
+# Config: Browse database path (database mode)
+$script:btnBrowseDbPath.add_Click({
+    $dlg = New-Object System.Windows.Forms.FolderBrowserDialog
+    $dlg.Description         = "Select EntryPass P1_Server (or database root) folder containing the 'event' subfolder with TRANS.FDB"
+    $dlg.ShowNewFolderButton = $false
+    if ($script:txtCfgDbPath.Text -and (Test-Path $script:txtCfgDbPath.Text)) {
+        $dlg.SelectedPath = $script:txtCfgDbPath.Text
+    }
+    if ($dlg.ShowDialog() -eq "OK") {
+        $script:txtCfgDbPath.Text = $dlg.SelectedPath
+    }
+})
+
+# Config: Test DB Connection
+$script:btnTestDbConn.add_Click({
+    $dbPath  = $script:txtCfgDbPath.Text.Trim()
+    $fbUser  = $script:txtCfgFbUser.Text.Trim()
+    $fbPass  = $script:txtCfgFbPass.Text.Trim()
+    $fbLib   = $script:txtCfgFbLib.Text.Trim()
+    if ([string]::IsNullOrWhiteSpace($dbPath)) {
+        $script:lblDbConnStatus.Text      = "Enter Database Path first."
+        $script:lblDbConnStatus.ForeColor = $clrOrange
+        return
+    }
+    $script:lblDbConnStatus.Text      = "Testing connection..."
+    $script:lblDbConnStatus.ForeColor = $clrTextDim
+    $panelConfig.Refresh()
+    $result = Test-FirebirdConnection -DbPath $dbPath -FbUser $fbUser -FbPassword $fbPass -ClientLibrary $fbLib
+    if ($result.Success) {
+        $script:lblDbConnStatus.Text      = $result.Message
+        $script:lblDbConnStatus.ForeColor = $clrGreen
+    } else {
+        $script:lblDbConnStatus.Text      = $result.Message
+        $script:lblDbConnStatus.ForeColor = [System.Drawing.Color]::FromArgb(210,60,60)
     }
 })
 
