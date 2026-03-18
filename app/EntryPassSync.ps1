@@ -2004,7 +2004,7 @@ function Check-ForUpdate {
                     $mainForm.Close()
                 } else {
                     Remove-Item $tempPath -Force -ErrorAction SilentlyContinue
-                    Write-SyncLog "Update download invalid — keeping current version"
+                    Write-SyncLog "Update download invalid -- keeping current version"
                 }
             }
         } else {
