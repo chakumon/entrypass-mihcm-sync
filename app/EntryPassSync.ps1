@@ -1370,13 +1370,25 @@ Add-AboutRow "Log file"    $script:logFile           200 | Out-Null
 Add-AboutRow "Script dir"  $script:appDir            222 | Out-Null
 
 $aboutDesc = New-Object System.Windows.Forms.Label
-$aboutDesc.Text      = "Reads EntryPass attendance files (DATA*.txt) and uploads them to MiHCM via REST API. Supports batch upload, duplicate detection, automatic retry, and Windows Task Scheduler integration."
+$aboutDesc.Text      = "Syncs EntryPass attendance data to MiHCM via REST API. Supports database direct mode, batch upload, duplicate detection, and automatic retry."
 $aboutDesc.Font      = New-Object System.Drawing.Font("Segoe UI",8.5)
 $aboutDesc.ForeColor = $clrTextDim
 $aboutDesc.Location  = New-Object System.Drawing.Point(20,250)
-$aboutDesc.Size      = New-Object System.Drawing.Size(610,60)
+$aboutDesc.Size      = New-Object System.Drawing.Size(610,44)
 $aboutDesc.AutoSize  = $false
 $aboutCard.Controls.Add($aboutDesc)
+
+$btnCheckUpdate = New-Object System.Windows.Forms.Button
+$btnCheckUpdate.Text      = "Check for Updates"
+$btnCheckUpdate.Font      = New-Object System.Drawing.Font("Segoe UI",9)
+$btnCheckUpdate.Location  = New-Object System.Drawing.Point(20,300)
+$btnCheckUpdate.Size      = New-Object System.Drawing.Size(160,34)
+$btnCheckUpdate.FlatStyle = "Flat"
+$btnCheckUpdate.BackColor = $clrBlue
+$btnCheckUpdate.ForeColor = [System.Drawing.Color]::White
+$btnCheckUpdate.Cursor    = [System.Windows.Forms.Cursors]::Hand
+$btnCheckUpdate.add_Click({ Check-ForUpdate })
+$aboutCard.Controls.Add($btnCheckUpdate)
 
 # ============================================================
 # SYSTEM TRAY
