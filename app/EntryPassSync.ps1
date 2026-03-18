@@ -1183,30 +1183,12 @@ function Update-DataSourceUI {
 $script:rdoFileMode.add_CheckedChanged({ Update-DataSourceUI })
 $script:rdoDbMode.add_CheckedChanged({  Update-DataSourceUI })
 
-# Schedule section
-$sepCfg1 = New-Object System.Windows.Forms.Label
-$sepCfg1.BackColor = [System.Drawing.Color]::FromArgb(210,215,225)
-$sepCfg1.Location  = New-Object System.Drawing.Point(4,$cfgY)
-$sepCfg1.Size      = New-Object System.Drawing.Size(619,1)
-$cfgScroll.Controls.Add($sepCfg1)
-$cfgY += 10
-
+# Schedule - hidden (now uses built-in 15-min timer, not Task Scheduler)
 $script:chkSchedule = New-Object System.Windows.Forms.CheckBox
-$script:chkSchedule.Text     = "Enable scheduled sync via Windows Task Scheduler"
-$script:chkSchedule.Font     = New-Object System.Drawing.Font("Segoe UI",9)
-$script:chkSchedule.Location = New-Object System.Drawing.Point(4,$cfgY)
-$script:chkSchedule.Size     = New-Object System.Drawing.Size(620,24)
-$cfgScroll.Controls.Add($script:chkSchedule)
-$cfgY += 34
-
+$script:chkSchedule.Checked = $true
 $script:cmbFrequency = New-Object System.Windows.Forms.ComboBox
-$script:cmbFrequency.DropDownStyle = "DropDownList"
 [void]$script:cmbFrequency.Items.Add("Every 15 minutes")
-[void]$script:cmbFrequency.Items.Add("Every 30 minutes")
-[void]$script:cmbFrequency.Items.Add("Hourly")
-[void]$script:cmbFrequency.Items.Add("Every 2 hours")
-$script:cmbFrequency.SelectedIndex = 1
-Add-CfgField "Schedule Frequency" $script:cmbFrequency 28
+$script:cmbFrequency.SelectedIndex = 0
 
 $sepCfg2 = New-Object System.Windows.Forms.Label
 $sepCfg2.BackColor = [System.Drawing.Color]::FromArgb(210,215,225)
@@ -1237,7 +1219,7 @@ $script:btnTestConn.Cursor    = [System.Windows.Forms.Cursors]::Hand
 $cfgScroll.Controls.Add($script:btnTestConn)
 
 $script:btnSaveInstall = New-Object System.Windows.Forms.Button
-$script:btnSaveInstall.Text      = "Save && Install Schedule"
+$script:btnSaveInstall.Text      = "Save Configuration"
 $script:btnSaveInstall.Font      = New-Object System.Drawing.Font("Segoe UI",8.5,[System.Drawing.FontStyle]::Bold)
 $script:btnSaveInstall.FlatStyle = "Flat"
 $script:btnSaveInstall.FlatAppearance.BorderSize = 0
