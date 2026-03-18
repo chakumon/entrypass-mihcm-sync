@@ -1,8 +1,12 @@
 # EntryPassSync.ps1 -- EntryPass to MiHCM Sync -- All-in-One GUI Application
 # Company  : Dajayana Trading (www.dajayana.com)
-# Version  : 1.0
+# Version  : 1.0.0
 # Contact  : +60 16-883 8338
 # Requires : PowerShell 5.1+, Windows 10/11
+
+$script:appVersion = "1.0.0"
+$script:updateUrl  = "https://raw.githubusercontent.com/chakumon/entrypass-mihcm-sync/main/version.json"
+$script:scriptUrl  = "https://raw.githubusercontent.com/chakumon/entrypass-mihcm-sync/main/app/EntryPassSync.ps1"
 
 $ErrorActionPreference = "Continue"
 
@@ -26,10 +30,11 @@ $script:appDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 if ([string]::IsNullOrWhiteSpace($script:appDir)) { $script:appDir = Split-Path -Parent $PSCommandPath }
 if ([string]::IsNullOrWhiteSpace($script:appDir)) { $script:appDir = (Get-Location).Path }
 
-$script:configFile = Join-Path $script:appDir "config.json"
-$script:logFile    = Join-Path $script:appDir "sync_log.txt"
-$script:cacheFile  = Join-Path $script:appDir "license_cache.json"
-$script:licenseUrl = "https://raw.githubusercontent.com/chakumon/entrypass-mihcm-licenses/main/licenses.json"
+$script:configFile  = Join-Path $script:appDir "config.json"
+$script:logFile     = Join-Path $script:appDir "sync_log.txt"
+$script:cacheFile   = Join-Path $script:appDir "license_cache.json"
+$script:licenseUrl  = "https://raw.githubusercontent.com/chakumon/entrypass-mihcm-licenses/main/licenses.json"
+$script:versionFile = Join-Path $script:appDir "version_cache.json"
 
 # ============================================================
 # SCRIPT-LEVEL STATE
@@ -1343,7 +1348,7 @@ $aboutAppName.Size      = New-Object System.Drawing.Size(400,30)
 $aboutCard.Controls.Add($aboutAppName)
 
 $aboutVer = New-Object System.Windows.Forms.Label
-$aboutVer.Text      = "Version 1.0"
+$aboutVer.Text      = "Version $script:appVersion"
 $aboutVer.Font      = New-Object System.Drawing.Font("Segoe UI",9)
 $aboutVer.ForeColor = $clrTextDim
 $aboutVer.Location  = New-Object System.Drawing.Point(20,50)
@@ -1953,6 +1958,53 @@ $mainForm.add_Load({
 })
 
 $mainForm.ResumeLayout($false)
+
+# ============================================================
+# AUTO-UPDATE CHECK
+# ============================================================
+function Check-ForUpdate {
+    try {
+        [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+        $wc = New-Object System.Net.WebClient
+        $json = $wc.DownloadString($script:updateUrl)
+        $remote = ConvertFrom-Json $json
+        $remoteVer = [version]$remote.version
+        $localVer  = [version]$script:appVersion
+        if ($remoteVer -gt $localVer) {
+            Write-SyncLog "Update available: v$($remote.version) (current: v$script:appVersion)"
+            $ans = [System.Windows.Forms.MessageBox]::Show(
+                "A new version is available!`n`nCurrent: v$script:appVersion`nNew: v$($remote.version)`n`n$($remote.notes)`n`nUpdate now?",
+                "Update Available", "YesNo", "Information")
+            if ($ans -eq "Yes") {
+                Write-SyncLog "Downloading update v$($remote.version)..."
+                $scriptPath = Join-Path $script:appDir "EntryPassSync.ps1"
+                $tempPath   = Join-Path $script:appDir "EntryPassSync.ps1.update"
+                $wc.DownloadFile($script:scriptUrl, $tempPath)
+                # Verify download is valid (must contain our marker)
+                $content = Get-Content $tempPath -Raw -ErrorAction Stop
+                if ($content -match 'appVersion') {
+                    Copy-Item $tempPath $scriptPath -Force
+                    Remove-Item $tempPath -Force -ErrorAction SilentlyContinue
+                    Write-SyncLog "Update installed. Restarting..."
+                    $psExe = "C:\Windows\SysWOW64\WindowsPowerShell\v1.0\powershell.exe"
+                    Start-Process $psExe -ArgumentList "-ExecutionPolicy Bypass -NoProfile -File `"$scriptPath`""
+                    $script:reallyExit = $true
+                    $mainForm.Close()
+                } else {
+                    Remove-Item $tempPath -Force -ErrorAction SilentlyContinue
+                    Write-SyncLog "Update download invalid — keeping current version"
+                }
+            }
+        } else {
+            Write-SyncLog "Version check: v$script:appVersion is up to date"
+        }
+    } catch {
+        Write-SyncLog "Update check failed: $($_.Exception.Message)"
+    }
+}
+
+# Check for updates on startup
+Check-ForUpdate
 
 # ============================================================
 # BUILT-IN SYNC TIMER (syncs every 15 minutes while app is open)

@@ -1,0 +1,5 @@
+{
+  "version": "1.0.0",
+  "released": "2026-03-19",
+  "notes": "Initial release — Database Direct Mode, built-in 15-min sync timer, auto-start with Windows"
+}
