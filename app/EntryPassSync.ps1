@@ -945,6 +945,7 @@ $script:txtLiveLog.Location     = New-Object System.Drawing.Point(24,400)
 $script:txtLiveLog.Size         = New-Object System.Drawing.Size(652,150)
 $script:txtLiveLog.BorderStyle  = "None"
 $script:txtLiveLog.Anchor       = "Top,Left,Right,Bottom"
+$script:txtLiveLog.MaximumSize  = New-Object System.Drawing.Size(0, 250)
 $panelDashboard.Controls.Add($script:txtLiveLog)
 
 # ============================================================
@@ -1039,32 +1040,6 @@ Add-CfgField "Location Code *" $script:txtCfgLocation
 $script:txtCfgLocationDesc = New-Object System.Windows.Forms.TextBox
 Add-CfgField "Location Description" $script:txtCfgLocationDesc
 
-# Source folder row with Browse button
-$lblSrcF = New-Object System.Windows.Forms.Label
-$lblSrcF.Text      = "Source Folder *"
-$lblSrcF.Font      = New-Object System.Drawing.Font("Segoe UI",8.5)
-$lblSrcF.ForeColor = $clrTextDim
-$lblSrcF.Location  = New-Object System.Drawing.Point(4,$cfgY)
-$lblSrcF.Size      = New-Object System.Drawing.Size(175,20)
-$cfgScroll.Controls.Add($lblSrcF)
-
-$script:txtCfgSourceFolder = New-Object System.Windows.Forms.TextBox
-$script:txtCfgSourceFolder.Location = New-Object System.Drawing.Point(183,$cfgY)
-$script:txtCfgSourceFolder.Size     = New-Object System.Drawing.Size(360,28)
-$script:txtCfgSourceFolder.Font     = New-Object System.Drawing.Font("Segoe UI",9)
-$cfgScroll.Controls.Add($script:txtCfgSourceFolder)
-
-$script:btnBrowseFolder = New-Object System.Windows.Forms.Button
-$script:btnBrowseFolder.Text      = "Browse"
-$script:btnBrowseFolder.Font      = New-Object System.Drawing.Font("Segoe UI",8.5)
-$script:btnBrowseFolder.FlatStyle = "Flat"
-$script:btnBrowseFolder.BackColor = [System.Drawing.Color]::FromArgb(230,235,240)
-$script:btnBrowseFolder.Location  = New-Object System.Drawing.Point(549,$cfgY)
-$script:btnBrowseFolder.Size      = New-Object System.Drawing.Size(74,28)
-$script:btnBrowseFolder.Cursor    = [System.Windows.Forms.Cursors]::Hand
-$cfgScroll.Controls.Add($script:btnBrowseFolder)
-$cfgY += 38
-
 # ---- DATA SOURCE MODE SECTION ----
 $sepDsrc = New-Object System.Windows.Forms.Label
 $sepDsrc.BackColor = [System.Drawing.Color]::FromArgb(210,215,225)
@@ -1082,6 +1057,7 @@ $lblDsrcHdr.Size      = New-Object System.Drawing.Size(619,20)
 $cfgScroll.Controls.Add($lblDsrcHdr)
 $cfgY += 26
 
+# Radio: Database Direct
 $script:rdoDbMode = New-Object System.Windows.Forms.RadioButton
 $script:rdoDbMode.Text     = "Database Direct (Firebird) -- reads attendance directly from TRANS.FDB"
 $script:rdoDbMode.Font     = New-Object System.Drawing.Font("Segoe UI",9)
@@ -1091,23 +1067,14 @@ $script:rdoDbMode.Size     = New-Object System.Drawing.Size(619,22)
 $cfgScroll.Controls.Add($script:rdoDbMode)
 $cfgY += 26
 
-$script:rdoFileMode = New-Object System.Windows.Forms.RadioButton
-$script:rdoFileMode.Text     = "File-based (DATA*.txt) -- reads exported text files from EntryPass"
-$script:rdoFileMode.Font     = New-Object System.Drawing.Font("Segoe UI",9)
-$script:rdoFileMode.Checked  = $false
-$script:rdoFileMode.Location = New-Object System.Drawing.Point(4,$cfgY)
-$script:rdoFileMode.Size     = New-Object System.Drawing.Size(619,22)
-$cfgScroll.Controls.Add($script:rdoFileMode)
-$cfgY += 30
-
-# Database path row
-$lblDbPath = New-Object System.Windows.Forms.Label
-$lblDbPath.Text      = "Database Path"
-$lblDbPath.Font      = New-Object System.Drawing.Font("Segoe UI",8.5)
-$lblDbPath.ForeColor = $clrTextDim
-$lblDbPath.Location  = New-Object System.Drawing.Point(4,$cfgY)
-$lblDbPath.Size      = New-Object System.Drawing.Size(175,20)
-$cfgScroll.Controls.Add($lblDbPath)
+# INDENTED: Database path row
+$script:lblDbPath = New-Object System.Windows.Forms.Label
+$script:lblDbPath.Text      = "Database Path"
+$script:lblDbPath.Font      = New-Object System.Drawing.Font("Segoe UI",8.5)
+$script:lblDbPath.ForeColor = $clrTextDim
+$script:lblDbPath.Location  = New-Object System.Drawing.Point(30,$cfgY)
+$script:lblDbPath.Size      = New-Object System.Drawing.Size(149,20)
+$cfgScroll.Controls.Add($script:lblDbPath)
 
 $script:txtCfgDbPath = New-Object System.Windows.Forms.TextBox
 $script:txtCfgDbPath.Location = New-Object System.Drawing.Point(183,$cfgY)
@@ -1126,36 +1093,80 @@ $script:btnBrowseDbPath.Cursor    = [System.Windows.Forms.Cursors]::Hand
 $cfgScroll.Controls.Add($script:btnBrowseDbPath)
 $cfgY += 38
 
-# Firebird username
+# INDENTED: Firebird username
+$script:lblFbUser = New-Object System.Windows.Forms.Label
+$script:lblFbUser.Text      = "Firebird Username"
+$script:lblFbUser.Font      = New-Object System.Drawing.Font("Segoe UI",8.5)
+$script:lblFbUser.ForeColor = $clrTextDim
+$script:lblFbUser.Location  = New-Object System.Drawing.Point(30,$cfgY)
+$script:lblFbUser.Size      = New-Object System.Drawing.Size(149,20)
+$cfgScroll.Controls.Add($script:lblFbUser)
 $script:txtCfgFbUser = New-Object System.Windows.Forms.TextBox
-Add-CfgField "Firebird Username" $script:txtCfgFbUser
-$script:txtCfgFbUser.Text = "SYSDBA"
+$script:txtCfgFbUser.Location = New-Object System.Drawing.Point(183,$cfgY)
+$script:txtCfgFbUser.Size     = New-Object System.Drawing.Size(440,28)
+$script:txtCfgFbUser.Font     = New-Object System.Drawing.Font("Segoe UI",9)
+$script:txtCfgFbUser.Text     = "SYSDBA"
+$cfgScroll.Controls.Add($script:txtCfgFbUser)
+$cfgY += 38
 
-# Firebird password
+# INDENTED: Firebird password
+$script:lblFbPass = New-Object System.Windows.Forms.Label
+$script:lblFbPass.Text      = "Firebird Password"
+$script:lblFbPass.Font      = New-Object System.Drawing.Font("Segoe UI",8.5)
+$script:lblFbPass.ForeColor = $clrTextDim
+$script:lblFbPass.Location  = New-Object System.Drawing.Point(30,$cfgY)
+$script:lblFbPass.Size      = New-Object System.Drawing.Size(149,20)
+$cfgScroll.Controls.Add($script:lblFbPass)
 $script:txtCfgFbPass = New-Object System.Windows.Forms.TextBox
+$script:txtCfgFbPass.Location             = New-Object System.Drawing.Point(183,$cfgY)
+$script:txtCfgFbPass.Size                 = New-Object System.Drawing.Size(440,28)
+$script:txtCfgFbPass.Font                 = New-Object System.Drawing.Font("Segoe UI",9)
 $script:txtCfgFbPass.UseSystemPasswordChar = $true
-Add-CfgField "Firebird Password" $script:txtCfgFbPass
-$script:txtCfgFbPass.Text = "masterkey"
+$script:txtCfgFbPass.Text                 = "masterkey"
+$cfgScroll.Controls.Add($script:txtCfgFbPass)
+$cfgY += 38
 
-# Firebird client library (optional)
+# INDENTED: Firebird client library (optional)
+$script:lblFbLib = New-Object System.Windows.Forms.Label
+$script:lblFbLib.Text      = "FB Client DLL (optional)"
+$script:lblFbLib.Font      = New-Object System.Drawing.Font("Segoe UI",8.5)
+$script:lblFbLib.ForeColor = $clrTextDim
+$script:lblFbLib.Location  = New-Object System.Drawing.Point(30,$cfgY)
+$script:lblFbLib.Size      = New-Object System.Drawing.Size(149,20)
+$cfgScroll.Controls.Add($script:lblFbLib)
 $script:txtCfgFbLib = New-Object System.Windows.Forms.TextBox
-Add-CfgField "FB Client DLL (optional)" $script:txtCfgFbLib
+$script:txtCfgFbLib.Location = New-Object System.Drawing.Point(183,$cfgY)
+$script:txtCfgFbLib.Size     = New-Object System.Drawing.Size(440,28)
+$script:txtCfgFbLib.Font     = New-Object System.Drawing.Font("Segoe UI",9)
+$cfgScroll.Controls.Add($script:txtCfgFbLib)
+$cfgY += 38
 
-# Sync days spinner
+# INDENTED: Sync days spinner
+$script:lblSyncDays = New-Object System.Windows.Forms.Label
+$script:lblSyncDays.Text      = "Sync Days (DB mode)"
+$script:lblSyncDays.Font      = New-Object System.Drawing.Font("Segoe UI",8.5)
+$script:lblSyncDays.ForeColor = $clrTextDim
+$script:lblSyncDays.Location  = New-Object System.Drawing.Point(30,$cfgY)
+$script:lblSyncDays.Size      = New-Object System.Drawing.Size(149,20)
+$cfgScroll.Controls.Add($script:lblSyncDays)
 $script:numSyncDays = New-Object System.Windows.Forms.NumericUpDown
-$script:numSyncDays.Minimum  = 1
-$script:numSyncDays.Maximum  = 30
-$script:numSyncDays.Value    = 1
+$script:numSyncDays.Minimum       = 1
+$script:numSyncDays.Maximum       = 30
+$script:numSyncDays.Value         = 1
 $script:numSyncDays.DecimalPlaces = 0
-Add-CfgField "Sync Days (DB mode)" $script:numSyncDays 28
+$script:numSyncDays.Location      = New-Object System.Drawing.Point(183,$cfgY)
+$script:numSyncDays.Size          = New-Object System.Drawing.Size(440,28)
+$script:numSyncDays.Font          = New-Object System.Drawing.Font("Segoe UI",9)
+$cfgScroll.Controls.Add($script:numSyncDays)
+$cfgY += 38
 
-# Test DB Connection button + status label
+# INDENTED: Test DB Connection button + status label
 $script:btnTestDbConn = New-Object System.Windows.Forms.Button
 $script:btnTestDbConn.Text      = "Test DB Connection"
 $script:btnTestDbConn.Font      = New-Object System.Drawing.Font("Segoe UI",8.5)
 $script:btnTestDbConn.FlatStyle = "Flat"
 $script:btnTestDbConn.BackColor = [System.Drawing.Color]::FromArgb(230,235,240)
-$script:btnTestDbConn.Location  = New-Object System.Drawing.Point(4,$cfgY)
+$script:btnTestDbConn.Location  = New-Object System.Drawing.Point(30,$cfgY)
 $script:btnTestDbConn.Size      = New-Object System.Drawing.Size(160,28)
 $script:btnTestDbConn.Cursor    = [System.Windows.Forms.Cursors]::Hand
 $cfgScroll.Controls.Add($script:btnTestDbConn)
@@ -1164,26 +1175,70 @@ $script:lblDbConnStatus = New-Object System.Windows.Forms.Label
 $script:lblDbConnStatus.Text      = ""
 $script:lblDbConnStatus.Font      = New-Object System.Drawing.Font("Segoe UI",8.5)
 $script:lblDbConnStatus.ForeColor = $clrTextDim
-$script:lblDbConnStatus.Location  = New-Object System.Drawing.Point(172,$cfgY)
-$script:lblDbConnStatus.Size      = New-Object System.Drawing.Size(451,28)
+$script:lblDbConnStatus.Location  = New-Object System.Drawing.Point(198,$cfgY)
+$script:lblDbConnStatus.Size      = New-Object System.Drawing.Size(425,28)
 $cfgScroll.Controls.Add($script:lblDbConnStatus)
 $cfgY += 36
 
-# Helper to show/hide database vs file-mode controls
+# Radio: File-based
+$script:rdoFileMode = New-Object System.Windows.Forms.RadioButton
+$script:rdoFileMode.Text     = "File-based (DATA*.txt) -- reads exported text files from EntryPass"
+$script:rdoFileMode.Font     = New-Object System.Drawing.Font("Segoe UI",9)
+$script:rdoFileMode.Checked  = $false
+$script:rdoFileMode.Location = New-Object System.Drawing.Point(4,$cfgY)
+$script:rdoFileMode.Size     = New-Object System.Drawing.Size(619,22)
+$cfgScroll.Controls.Add($script:rdoFileMode)
+$cfgY += 26
+
+# INDENTED: Source folder row with Browse button
+$script:lblSrcF = New-Object System.Windows.Forms.Label
+$script:lblSrcF.Text      = "Source Folder *"
+$script:lblSrcF.Font      = New-Object System.Drawing.Font("Segoe UI",8.5)
+$script:lblSrcF.ForeColor = $clrTextDim
+$script:lblSrcF.Location  = New-Object System.Drawing.Point(30,$cfgY)
+$script:lblSrcF.Size      = New-Object System.Drawing.Size(149,20)
+$cfgScroll.Controls.Add($script:lblSrcF)
+
+$script:txtCfgSourceFolder = New-Object System.Windows.Forms.TextBox
+$script:txtCfgSourceFolder.Location = New-Object System.Drawing.Point(183,$cfgY)
+$script:txtCfgSourceFolder.Size     = New-Object System.Drawing.Size(360,28)
+$script:txtCfgSourceFolder.Font     = New-Object System.Drawing.Font("Segoe UI",9)
+$cfgScroll.Controls.Add($script:txtCfgSourceFolder)
+
+$script:btnBrowseFolder = New-Object System.Windows.Forms.Button
+$script:btnBrowseFolder.Text      = "Browse"
+$script:btnBrowseFolder.Font      = New-Object System.Drawing.Font("Segoe UI",8.5)
+$script:btnBrowseFolder.FlatStyle = "Flat"
+$script:btnBrowseFolder.BackColor = [System.Drawing.Color]::FromArgb(230,235,240)
+$script:btnBrowseFolder.Location  = New-Object System.Drawing.Point(549,$cfgY)
+$script:btnBrowseFolder.Size      = New-Object System.Drawing.Size(74,28)
+$script:btnBrowseFolder.Cursor    = [System.Windows.Forms.Cursors]::Hand
+$cfgScroll.Controls.Add($script:btnBrowseFolder)
+$cfgY += 38
+
+# Helper to enable/disable database vs file-mode controls with visual greying
 function Update-DataSourceUI {
-    $dbMode = $script:rdoDbMode.Checked
-    # File mode controls
-    $script:txtCfgSourceFolder.Enabled = (-not $dbMode)
-    $script:btnBrowseFolder.Enabled    = (-not $dbMode)
+    $dbMode   = $script:rdoDbMode.Checked
+    $dimColor = [System.Drawing.Color]::FromArgb(190,195,205)
+    $normColor = $clrTextDim
     # DB mode controls
     $script:txtCfgDbPath.Enabled    = $dbMode
-    $script:btnBrowseDbPath.Enabled  = $dbMode
+    $script:btnBrowseDbPath.Enabled = $dbMode
     $script:txtCfgFbUser.Enabled    = $dbMode
     $script:txtCfgFbPass.Enabled    = $dbMode
     $script:txtCfgFbLib.Enabled     = $dbMode
     $script:numSyncDays.Enabled     = $dbMode
     $script:btnTestDbConn.Enabled   = $dbMode
     $script:lblDbConnStatus.Text    = ""
+    $script:lblDbPath.ForeColor     = if ($dbMode) { $normColor } else { $dimColor }
+    $script:lblFbUser.ForeColor     = if ($dbMode) { $normColor } else { $dimColor }
+    $script:lblFbPass.ForeColor     = if ($dbMode) { $normColor } else { $dimColor }
+    $script:lblFbLib.ForeColor      = if ($dbMode) { $normColor } else { $dimColor }
+    $script:lblSyncDays.ForeColor   = if ($dbMode) { $normColor } else { $dimColor }
+    # File mode controls
+    $script:txtCfgSourceFolder.Enabled = (-not $dbMode)
+    $script:btnBrowseFolder.Enabled    = (-not $dbMode)
+    $script:lblSrcF.ForeColor          = if (-not $dbMode) { $normColor } else { $dimColor }
 }
 
 $script:rdoFileMode.add_CheckedChanged({ Update-DataSourceUI })
