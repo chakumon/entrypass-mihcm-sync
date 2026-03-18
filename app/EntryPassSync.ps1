@@ -89,6 +89,36 @@ function Write-SyncLog {
     }
 }
 
+function Trim-LogFile {
+    # Remove log entries older than 90 days
+    $maxAge = 90
+    if (-not (Test-Path $script:logFile)) { return }
+    try {
+        $cutoff = (Get-Date).AddDays(-$maxAge).ToString("yyyy-MM-dd")
+        $lines  = [System.IO.File]::ReadAllLines($script:logFile, [System.Text.Encoding]::UTF8)
+        $kept   = [System.Collections.Generic.List[string]]::new()
+        foreach ($line in $lines) {
+            # Log lines start with [YYYY-MM-DD HH:MM:SS]
+            if ($line -match '^\[(\d{4}-\d{2}-\d{2})') {
+                if ($Matches[1] -ge $cutoff) { $kept.Add($line) }
+            } elseif ($line -match '^={5,}') {
+                # Separator lines -- keep if following entries are recent
+                $kept.Add($line)
+            } else {
+                # Non-dated lines (blank, continuation) -- keep
+                $kept.Add($line)
+            }
+        }
+        $removed = $lines.Count - $kept.Count
+        if ($removed -gt 0) {
+            [System.IO.File]::WriteAllLines($script:logFile, $kept.ToArray(), [System.Text.Encoding]::UTF8)
+            Write-SyncLog "Log cleanup: removed $removed entries older than $maxAge days"
+        }
+    } catch {
+        # Silently ignore cleanup errors -- not critical
+    }
+}
+
 function Invoke-WithRetry {
     param([scriptblock]$ScriptBlock, [int]$MaxRetries = 3)
     $retryable = @(429,500,502,503,504)
@@ -471,6 +501,9 @@ function Test-FirebirdConnection {
 function Run-FullSync {
     param([System.ComponentModel.BackgroundWorker]$Worker)
     $script:bgWorker = $Worker
+
+    # Trim log entries older than 90 days
+    Trim-LogFile
 
     $cfg = Load-AppConfig
     if (-not $cfg) { Write-SyncLog "ERROR: config.json not found."; return @{ Success=$false; Stats=@{Saved=0;Skipped=0;Failed=0} } }
