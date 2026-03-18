@@ -1410,14 +1410,16 @@ $script:trayIcon = New-Object System.Windows.Forms.NotifyIcon
 $script:trayIcon.Text    = "EntryPass-MiHCM Sync"
 $script:trayIcon.Visible = $true
 
-# Use built-in app icon
+# Set tray icon
 try {
-    if (Test-Path $script:iconPath) {
+    if ((Test-Path $script:iconPath)) {
         $script:trayIcon.Icon = New-Object System.Drawing.Icon($script:iconPath)
     } else {
         $script:trayIcon.Icon = [System.Drawing.SystemIcons]::Application
     }
-} catch {}
+} catch {
+    $script:trayIcon.Icon = [System.Drawing.SystemIcons]::Application
+}
 
 $trayMenu = New-Object System.Windows.Forms.ContextMenuStrip
 $trayMenuOpen    = $trayMenu.Items.Add("Open")
