@@ -1548,7 +1548,7 @@ function Load-ConfigToForm {
         $script:cmbFrequency.SelectedItem = $freqMap[$cfg.scheduleFrequency]
     }
     # Database fields
-    $dataSource = if ($cfg.dataSource) { $cfg.dataSource } else { "file" }
+    $dataSource = if ($cfg.dataSource) { $cfg.dataSource } else { "database" }
     if ($dataSource -eq "database") {
         $script:rdoDbMode.Checked   = $true
     } else {
