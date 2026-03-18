@@ -1267,10 +1267,16 @@ $script:lblCfgStatus.Size      = New-Object System.Drawing.Size(619,22)
 $cfgScroll.Controls.Add($script:lblCfgStatus)
 $cfgY += 30
 
-# Config action buttons (Test Connection hidden -- API keys pre-configured)
+# Config action buttons
 $script:btnTestConn = New-Object System.Windows.Forms.Button
 $script:btnTestConn.Text      = "Test Connection"
-$script:btnTestConn.Visible   = $false
+$script:btnTestConn.Font      = New-Object System.Drawing.Font("Segoe UI",8.5)
+$script:btnTestConn.FlatStyle = "Flat"
+$script:btnTestConn.BackColor = [System.Drawing.Color]::FromArgb(230,235,240)
+$script:btnTestConn.Location  = New-Object System.Drawing.Point(4,$cfgY)
+$script:btnTestConn.Size      = New-Object System.Drawing.Size(140,30)
+$script:btnTestConn.Cursor    = [System.Windows.Forms.Cursors]::Hand
+$cfgScroll.Controls.Add($script:btnTestConn)
 
 $script:btnSaveInstall = New-Object System.Windows.Forms.Button
 $script:btnSaveInstall.Text      = "Save && Install Schedule"
@@ -1279,7 +1285,7 @@ $script:btnSaveInstall.FlatStyle = "Flat"
 $script:btnSaveInstall.FlatAppearance.BorderSize = 0
 $script:btnSaveInstall.BackColor = $clrBlue
 $script:btnSaveInstall.ForeColor = [System.Drawing.Color]::White
-$script:btnSaveInstall.Location  = New-Object System.Drawing.Point(4,$cfgY)
+$script:btnSaveInstall.Location  = New-Object System.Drawing.Point(154,$cfgY)
 $script:btnSaveInstall.Size      = New-Object System.Drawing.Size(200,30)
 $script:btnSaveInstall.Cursor    = [System.Windows.Forms.Cursors]::Hand
 $cfgScroll.Controls.Add($script:btnSaveInstall)
@@ -1289,7 +1295,7 @@ $script:btnSaveOnly.Text      = "Save Only"
 $script:btnSaveOnly.Font      = New-Object System.Drawing.Font("Segoe UI",8.5)
 $script:btnSaveOnly.FlatStyle = "Flat"
 $script:btnSaveOnly.BackColor = [System.Drawing.Color]::FromArgb(230,235,240)
-$script:btnSaveOnly.Location  = New-Object System.Drawing.Point(214,$cfgY)
+$script:btnSaveOnly.Location  = New-Object System.Drawing.Point(364,$cfgY)
 $script:btnSaveOnly.Size      = New-Object System.Drawing.Size(120,30)
 $script:btnSaveOnly.Cursor    = [System.Windows.Forms.Cursors]::Hand
 $cfgScroll.Controls.Add($script:btnSaveOnly)
@@ -1875,34 +1881,52 @@ $script:btnValidateLicense.add_Click({
 
 # Config: Test Connection
 $script:btnTestConn.add_Click({
-    $primary = $script:txtCfgPrimary.Text.Trim()
-    $secret  = $script:txtCfgSecret.Text.Trim()
-    $baseUrl = if ($script:cmbCfgEndpoint.SelectedIndex -eq 1) { "https://api.mihcm.com/uat" } else { "https://api.mihcm.com" }
-    if ([string]::IsNullOrWhiteSpace($primary) -or [string]::IsNullOrWhiteSpace($secret)) {
-        $script:lblCfgStatus.Text      = "Enter Primary Key and Secret Key first."
-        $script:lblCfgStatus.ForeColor = $clrOrange
-        return
-    }
-    $script:lblCfgStatus.Text      = "Testing connection..."
+    $cfg = Load-AppConfig
+    $results = @()
+    $script:lblCfgStatus.Text      = "Testing connections..."
     $script:lblCfgStatus.ForeColor = $clrTextDim
     $panelConfig.Refresh()
-    try {
-        $url = "$baseUrl/oauth2/token?grantType=client_credentials&clientId=$primary&clientSecret=$secret"
-        $raw = Invoke-WebRequest -Uri $url -Method GET -Headers @{"Ocp-Apim-Subscription-Key"=$primary} -UseBasicParsing -TimeoutSec 15
-        $res = $raw.Content | ConvertFrom-Json
-        if ($res.accessToken) {
-            $script:lblCfgStatus.Text      = "Connection OK -- Token obtained. Endpoint reachable."
-            $script:lblCfgStatus.ForeColor = $clrGreen
-        } else {
-            $script:lblCfgStatus.Text      = "Connected but no accessToken returned. Check keys."
-            $script:lblCfgStatus.ForeColor = $clrOrange
+
+    # Test 1: MiHCM API
+    $primary = if ($cfg.primaryKey) { $cfg.primaryKey } else { $script:txtCfgPrimary.Text.Trim() }
+    $secret  = if ($cfg.secretKey)  { $cfg.secretKey }  else { $script:txtCfgSecret.Text.Trim() }
+    $baseUrl = if ($cfg.apiEndpoint) { $cfg.apiEndpoint } else { "https://api.mihcm.com" }
+    $apiStatus = ""
+    if ([string]::IsNullOrWhiteSpace($primary) -or [string]::IsNullOrWhiteSpace($secret)) {
+        $apiStatus = "API: Not configured"
+    } else {
+        try {
+            $url = "$baseUrl/oauth2/token?grantType=client_credentials&clientId=$primary&clientSecret=$secret"
+            $raw = Invoke-WebRequest -Uri $url -Method GET -Headers @{"Ocp-Apim-Subscription-Key"=$primary} -UseBasicParsing -TimeoutSec 15
+            $res = $raw.Content | ConvertFrom-Json
+            if ($res.accessToken) { $apiStatus = "API: Connected" }
+            else { $apiStatus = "API: No token returned" }
+        } catch {
+            $sc = ""
+            if ($_.Exception.Response) { $sc = " HTTP $([int]$_.Exception.Response.StatusCode)" }
+            $apiStatus = "API: FAILED$sc"
         }
-    } catch {
-        $sc = ""
-        if ($_.Exception.Response) { $sc = " (HTTP $([int]$_.Exception.Response.StatusCode))" }
-        $script:lblCfgStatus.Text      = "Connection FAILED$sc -- $($_.Exception.Message)"
-        $script:lblCfgStatus.ForeColor = [System.Drawing.Color]::FromArgb(210,60,60)
     }
+
+    # Test 2: Firebird DB
+    $dbPath = $script:txtCfgDbPath.Text.Trim()
+    $fbUser = $script:txtCfgFbUser.Text.Trim()
+    $fbPwd  = $script:txtCfgFbPwd.Text.Trim()
+    $fbLib  = $script:txtCfgFbLib.Text.Trim()
+    $dbStatus = ""
+    if ([string]::IsNullOrWhiteSpace($dbPath)) {
+        $dbStatus = "DB: Not configured"
+    } else {
+        $testResult = Test-FirebirdConnection -DbPath $dbPath -FbUser $fbUser -FbPassword $fbPwd -ClientLibrary $fbLib
+        if ($testResult.Success) { $dbStatus = "DB: $($testResult.Message)" }
+        else { $dbStatus = "DB: FAILED - $($testResult.Message)" }
+    }
+
+    # Show combined result
+    $combined = "$apiStatus  |  $dbStatus"
+    $allOk = ($apiStatus -like "API: Connected*") -and ($dbStatus -like "DB: Connected*")
+    $script:lblCfgStatus.Text      = $combined
+    $script:lblCfgStatus.ForeColor = if ($allOk) { $clrGreen } else { $clrOrange }
 })
 
 # Config: Save Only
