@@ -2107,9 +2107,9 @@ $script:countdownTimer.add_Tick({
     if ($remaining.TotalSeconds -le 0) {
         $script:lblNextSync.Text = "Next sync: syncing..."
     } else {
-        $mins = [math]::Floor($remaining.TotalMinutes)
-        $secs = $remaining.Seconds
-        $script:lblNextSync.Text = "Next sync: {0:D2}:{1:D2}" -f $mins, $secs
+        $mins = [math]::Floor($remaining.TotalMinutes).ToString("00")
+        $secs = $remaining.Seconds.ToString("00")
+        $script:lblNextSync.Text = "Next sync: $mins`:$secs"
     }
 })
 $script:countdownTimer.Start()
