@@ -1087,15 +1087,6 @@ $lblDsrcHdr.Size      = New-Object System.Drawing.Size(619,20)
 $cfgScroll.Controls.Add($lblDsrcHdr)
 $cfgY += 26
 
-$script:rdoFileMode = New-Object System.Windows.Forms.RadioButton
-$script:rdoFileMode.Text     = "File-based (DATA*.txt) -- reads exported text files from EntryPass"
-$script:rdoFileMode.Font     = New-Object System.Drawing.Font("Segoe UI",9)
-$script:rdoFileMode.Checked  = $false
-$script:rdoFileMode.Location = New-Object System.Drawing.Point(4,$cfgY)
-$script:rdoFileMode.Size     = New-Object System.Drawing.Size(619,22)
-$cfgScroll.Controls.Add($script:rdoFileMode)
-$cfgY += 26
-
 $script:rdoDbMode = New-Object System.Windows.Forms.RadioButton
 $script:rdoDbMode.Text     = "Database Direct (Firebird) -- reads attendance directly from TRANS.FDB"
 $script:rdoDbMode.Font     = New-Object System.Drawing.Font("Segoe UI",9)
@@ -1103,6 +1094,15 @@ $script:rdoDbMode.Checked  = $true
 $script:rdoDbMode.Location = New-Object System.Drawing.Point(4,$cfgY)
 $script:rdoDbMode.Size     = New-Object System.Drawing.Size(619,22)
 $cfgScroll.Controls.Add($script:rdoDbMode)
+$cfgY += 26
+
+$script:rdoFileMode = New-Object System.Windows.Forms.RadioButton
+$script:rdoFileMode.Text     = "File-based (DATA*.txt) -- reads exported text files from EntryPass"
+$script:rdoFileMode.Font     = New-Object System.Drawing.Font("Segoe UI",9)
+$script:rdoFileMode.Checked  = $false
+$script:rdoFileMode.Location = New-Object System.Drawing.Point(4,$cfgY)
+$script:rdoFileMode.Size     = New-Object System.Drawing.Size(619,22)
+$cfgScroll.Controls.Add($script:rdoFileMode)
 $cfgY += 30
 
 # Database path row
