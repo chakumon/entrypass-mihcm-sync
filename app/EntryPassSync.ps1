@@ -1213,6 +1213,18 @@ $script:btnBrowseFolder.Location  = New-Object System.Drawing.Point(549,$cfgY)
 $script:btnBrowseFolder.Size      = New-Object System.Drawing.Size(74,28)
 $script:btnBrowseFolder.Cursor    = [System.Windows.Forms.Cursors]::Hand
 $cfgScroll.Controls.Add($script:btnBrowseFolder)
+$cfgY += 32
+
+$script:btnSyncFilesNow = New-Object System.Windows.Forms.Button
+$script:btnSyncFilesNow.Text      = "Sync Files Now"
+$script:btnSyncFilesNow.Font      = New-Object System.Drawing.Font("Segoe UI",8.5,[System.Drawing.FontStyle]::Bold)
+$script:btnSyncFilesNow.FlatStyle = "Flat"
+$script:btnSyncFilesNow.BackColor = [System.Drawing.Color]::FromArgb(0,51,102)
+$script:btnSyncFilesNow.ForeColor = [System.Drawing.Color]::White
+$script:btnSyncFilesNow.Location  = New-Object System.Drawing.Point(30,$cfgY)
+$script:btnSyncFilesNow.Size      = New-Object System.Drawing.Size(120,28)
+$script:btnSyncFilesNow.Cursor    = [System.Windows.Forms.Cursors]::Hand
+$cfgScroll.Controls.Add($script:btnSyncFilesNow)
 $cfgY += 38
 
 # Helper to enable/disable database vs file-mode controls with visual greying
@@ -1237,6 +1249,7 @@ function Update-DataSourceUI {
     # File mode controls
     $script:txtCfgSourceFolder.Enabled = (-not $dbMode)
     $script:btnBrowseFolder.Enabled    = (-not $dbMode)
+    $script:btnSyncFilesNow.Enabled    = (-not $dbMode)
     $script:lblSrcF.ForeColor          = if (-not $dbMode) { $normColor } else { $dimColor }
 }
 
@@ -1790,6 +1803,25 @@ function Start-SyncBackground {
 $script:btnSyncNow.add_Click({ Start-SyncBackground })
 
 # Config: Browse folder (file mode)
+$script:btnSyncFilesNow.add_Click({
+    # Force a file-based sync using the Source Folder path from config
+    $folder = $script:txtCfgSourceFolder.Text.Trim()
+    if ([string]::IsNullOrWhiteSpace($folder) -or -not (Test-Path $folder)) {
+        [System.Windows.Forms.MessageBox]::Show("Please set a valid Source Folder first.", "No Folder", "OK", "Warning") | Out-Null
+        return
+    }
+    # Temporarily override dataSource to file, run sync, then restore
+    $cfg = Load-AppConfig
+    $origSource = $cfg.dataSource
+    $cfg.dataSource = "file"
+    $cfg.sourceFolder = $folder
+    Save-AppConfig $cfg
+    Switch-Panel "navDashboard"
+    Start-SyncBackground
+    # Restore original dataSource after sync starts (config reloaded inside sync)
+    # No restore needed -- sync reads config at start, user can switch back manually
+})
+
 $script:btnBrowseFolder.add_Click({
     $dlg = New-Object System.Windows.Forms.FolderBrowserDialog
     $dlg.Description         = "Select folder containing EntryPass DATA*.txt files"
