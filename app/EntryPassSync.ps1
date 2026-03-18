@@ -1317,7 +1317,7 @@ $panelAbout.Controls.Add($aboutTitle)
 $aboutCard = New-Object System.Windows.Forms.Panel
 $aboutCard.BackColor = [System.Drawing.Color]::White
 $aboutCard.Location  = New-Object System.Drawing.Point(24,68)
-$aboutCard.Size      = New-Object System.Drawing.Size(652,300)
+$aboutCard.Size      = New-Object System.Drawing.Size(652,360)
 $panelAbout.Controls.Add($aboutCard)
 
 function Add-AboutRow {
