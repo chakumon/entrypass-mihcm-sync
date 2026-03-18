@@ -1,0 +1,32 @@
+{
+  "_comment": "EntryPass-MiHCM Sync -- Configuration File",
+  "_comment2": "Copy this file to config.json and fill in your values.",
+  "_comment3": "Run setup.ps1 to configure via GUI (recommended).",
+
+  "licenseKey": "DAJAYANA-XXXX-XXXX-XXXX",
+  "_licenseKey": "Your license key from Dajayana Trading. Required for the app to run.",
+
+  "primaryKey": "your-mihcm-primary-key-here",
+  "_primaryKey": "MiHCM API subscription key (Ocp-Apim-Subscription-Key). From your MiHCM tenant settings.",
+
+  "secretKey": "your-mihcm-secret-key-here",
+  "_secretKey": "MiHCM API client secret. Keep this private.",
+
+  "apiEndpoint": "https://api.mihcm.com",
+  "_apiEndpoint": "Use 'https://api.mihcm.com' for Production or 'https://api.mihcm.com/uat' for UAT/testing.",
+
+  "clientName": "Petra Energy Sarawak",
+  "_clientName": "Your company or client name. Used in log output only.",
+
+  "location": "PEMO",
+  "_location": "Short location code (uppercase). Used as the Location field in MiHCM upload records. Example: PEMO, MIRI, HQ.",
+
+  "locationDesc": "Miri Pujut Office",
+  "_locationDesc": "Human-readable location name. Used in logs and Task Scheduler task name. Optional.",
+
+  "sourceFolder": "C:\\EntryPass\\Export",
+  "_sourceFolder": "Full path to the folder where EntryPass exports DATA*.txt files. The sync engine scans this folder on every run.",
+
+  "batchSize": 80,
+  "_batchSize": "Number of records per API upload request. MiHCM supports max 100. Default 80 for safety margin."
+}

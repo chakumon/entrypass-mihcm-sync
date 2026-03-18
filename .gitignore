@@ -1,0 +1,6 @@
+# Runtime files (never commit)
+app/config.json
+app/license_cache.json
+app/convert_log.txt
+app/attendance_mihcm_*.txt
+app/DATA*.txt
