@@ -328,7 +328,12 @@ function Load-FirebirdAssembly {
     }
     $searchPaths += @(
         (Join-Path $script:appDir "FirebirdSql.Data.FirebirdClient.dll"),
-        (Join-Path $DbPath "FirebirdSql.Data.FirebirdClient.dll")
+        (Join-Path $DbPath "FirebirdSql.Data.FirebirdClient.dll"),
+        (Join-Path $DbPath "VCSG\FirebirdSql.Data.FirebirdClient.dll"),
+        "C:\EntryPass\P1_Server\FirebirdSql.Data.FirebirdClient.dll",
+        "C:\EntryPass\P1_Server\VCSG\FirebirdSql.Data.FirebirdClient.dll",
+        "C:\Program Files (x86)\Firebird\Firebird_2_5\bin\fbclient.dll",
+        "C:\Program Files\Firebird\Firebird_2_5\bin\fbclient.dll"
     )
     foreach ($path in $searchPaths) {
         if ([string]::IsNullOrWhiteSpace($path)) { continue }
