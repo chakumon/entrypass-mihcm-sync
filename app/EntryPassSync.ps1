@@ -775,6 +775,7 @@ $contentArea.Size      = New-Object System.Drawing.Size(700,620)
 $contentArea.Location  = New-Object System.Drawing.Point(200,0)
 $contentArea.BackColor = $clrPanelBg
 $contentArea.Anchor    = "Top,Left,Right,Bottom"
+$contentArea.BorderStyle = "FixedSingle"
 $mainForm.Controls.Add($contentArea)
 
 # Helper to make a content panel
