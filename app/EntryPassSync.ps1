@@ -1069,13 +1069,11 @@ $script:lblFbUser.Font      = New-Object System.Drawing.Font("Segoe UI",8.5)
 $script:lblFbUser.ForeColor = $clrTextDim
 $script:lblFbUser.Location  = New-Object System.Drawing.Point(30,$cfgY)
 $script:lblFbUser.Size      = New-Object System.Drawing.Size(149,20)
-$cfgScroll.Controls.Add($script:lblFbUser)
 $script:txtCfgFbUser = New-Object System.Windows.Forms.TextBox
 $script:txtCfgFbUser.Location = New-Object System.Drawing.Point(183,$cfgY)
 $script:txtCfgFbUser.Size     = New-Object System.Drawing.Size(440,28)
 $script:txtCfgFbUser.Font     = New-Object System.Drawing.Font("Segoe UI",9)
 $script:txtCfgFbUser.Text     = "SYSDBA"
-$cfgScroll.Controls.Add($script:txtCfgFbUser)
 $cfgY += 38
 
 # INDENTED: Firebird password
@@ -1085,14 +1083,12 @@ $script:lblFbPass.Font      = New-Object System.Drawing.Font("Segoe UI",8.5)
 $script:lblFbPass.ForeColor = $clrTextDim
 $script:lblFbPass.Location  = New-Object System.Drawing.Point(30,$cfgY)
 $script:lblFbPass.Size      = New-Object System.Drawing.Size(149,20)
-$cfgScroll.Controls.Add($script:lblFbPass)
 $script:txtCfgFbPass = New-Object System.Windows.Forms.TextBox
 $script:txtCfgFbPass.Location             = New-Object System.Drawing.Point(183,$cfgY)
 $script:txtCfgFbPass.Size                 = New-Object System.Drawing.Size(440,28)
 $script:txtCfgFbPass.Font                 = New-Object System.Drawing.Font("Segoe UI",9)
 $script:txtCfgFbPass.UseSystemPasswordChar = $true
 $script:txtCfgFbPass.Text                 = "masterkey"
-$cfgScroll.Controls.Add($script:txtCfgFbPass)
 $cfgY += 38
 
 # INDENTED: Firebird client library (optional)
@@ -1102,12 +1098,10 @@ $script:lblFbLib.Font      = New-Object System.Drawing.Font("Segoe UI",8.5)
 $script:lblFbLib.ForeColor = $clrTextDim
 $script:lblFbLib.Location  = New-Object System.Drawing.Point(30,$cfgY)
 $script:lblFbLib.Size      = New-Object System.Drawing.Size(149,20)
-$cfgScroll.Controls.Add($script:lblFbLib)
 $script:txtCfgFbLib = New-Object System.Windows.Forms.TextBox
 $script:txtCfgFbLib.Location = New-Object System.Drawing.Point(183,$cfgY)
 $script:txtCfgFbLib.Size     = New-Object System.Drawing.Size(440,28)
 $script:txtCfgFbLib.Font     = New-Object System.Drawing.Font("Segoe UI",9)
-$cfgScroll.Controls.Add($script:txtCfgFbLib)
 $cfgY += 38
 
 # INDENTED: Sync days spinner
@@ -1205,16 +1199,10 @@ function Update-DataSourceUI {
     # DB mode controls
     $script:txtCfgDbPath.Enabled    = $dbMode
     $script:btnBrowseDbPath.Enabled = $dbMode
-    $script:txtCfgFbUser.Enabled    = $dbMode
-    $script:txtCfgFbPass.Enabled    = $dbMode
-    $script:txtCfgFbLib.Enabled     = $dbMode
     $script:numSyncDays.Enabled     = $dbMode
     $script:btnTestDbConn.Enabled   = $dbMode
     $script:lblDbConnStatus.Text    = ""
     $script:lblDbPath.ForeColor     = if ($dbMode) { $normColor } else { $dimColor }
-    $script:lblFbUser.ForeColor     = if ($dbMode) { $normColor } else { $dimColor }
-    $script:lblFbPass.ForeColor     = if ($dbMode) { $normColor } else { $dimColor }
-    $script:lblFbLib.ForeColor      = if ($dbMode) { $normColor } else { $dimColor }
     $script:lblSyncDays.ForeColor   = if ($dbMode) { $normColor } else { $dimColor }
     # File mode controls
     $script:txtCfgSourceFolder.Enabled = (-not $dbMode)
