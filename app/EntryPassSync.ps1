@@ -1062,47 +1062,16 @@ $script:btnBrowseDbPath.Cursor    = [System.Windows.Forms.Cursors]::Hand
 $cfgScroll.Controls.Add($script:btnBrowseDbPath)
 $cfgY += 38
 
-# INDENTED: Firebird username
+# Firebird credentials - hidden from UI, pre-configured in config.json
 $script:lblFbUser = New-Object System.Windows.Forms.Label
-$script:lblFbUser.Text      = "Firebird Username"
-$script:lblFbUser.Font      = New-Object System.Drawing.Font("Segoe UI",8.5)
-$script:lblFbUser.ForeColor = $clrTextDim
-$script:lblFbUser.Location  = New-Object System.Drawing.Point(30,$cfgY)
-$script:lblFbUser.Size      = New-Object System.Drawing.Size(149,20)
 $script:txtCfgFbUser = New-Object System.Windows.Forms.TextBox
-$script:txtCfgFbUser.Location = New-Object System.Drawing.Point(183,$cfgY)
-$script:txtCfgFbUser.Size     = New-Object System.Drawing.Size(440,28)
-$script:txtCfgFbUser.Font     = New-Object System.Drawing.Font("Segoe UI",9)
-$script:txtCfgFbUser.Text     = "SYSDBA"
-$cfgY += 38
-
-# INDENTED: Firebird password
+$script:txtCfgFbUser.Text = "SYSDBA"
 $script:lblFbPass = New-Object System.Windows.Forms.Label
-$script:lblFbPass.Text      = "Firebird Password"
-$script:lblFbPass.Font      = New-Object System.Drawing.Font("Segoe UI",8.5)
-$script:lblFbPass.ForeColor = $clrTextDim
-$script:lblFbPass.Location  = New-Object System.Drawing.Point(30,$cfgY)
-$script:lblFbPass.Size      = New-Object System.Drawing.Size(149,20)
 $script:txtCfgFbPass = New-Object System.Windows.Forms.TextBox
-$script:txtCfgFbPass.Location             = New-Object System.Drawing.Point(183,$cfgY)
-$script:txtCfgFbPass.Size                 = New-Object System.Drawing.Size(440,28)
-$script:txtCfgFbPass.Font                 = New-Object System.Drawing.Font("Segoe UI",9)
+$script:txtCfgFbPass.Text = "masterkey"
 $script:txtCfgFbPass.UseSystemPasswordChar = $true
-$script:txtCfgFbPass.Text                 = "masterkey"
-$cfgY += 38
-
-# INDENTED: Firebird client library (optional)
 $script:lblFbLib = New-Object System.Windows.Forms.Label
-$script:lblFbLib.Text      = "FB Client DLL (optional)"
-$script:lblFbLib.Font      = New-Object System.Drawing.Font("Segoe UI",8.5)
-$script:lblFbLib.ForeColor = $clrTextDim
-$script:lblFbLib.Location  = New-Object System.Drawing.Point(30,$cfgY)
-$script:lblFbLib.Size      = New-Object System.Drawing.Size(149,20)
 $script:txtCfgFbLib = New-Object System.Windows.Forms.TextBox
-$script:txtCfgFbLib.Location = New-Object System.Drawing.Point(183,$cfgY)
-$script:txtCfgFbLib.Size     = New-Object System.Drawing.Size(440,28)
-$script:txtCfgFbLib.Font     = New-Object System.Drawing.Font("Segoe UI",9)
-$cfgY += 38
 
 # INDENTED: Sync days spinner
 $script:lblSyncDays = New-Object System.Windows.Forms.Label
