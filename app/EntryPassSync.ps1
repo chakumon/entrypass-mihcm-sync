@@ -1249,15 +1249,7 @@ $script:btnSaveInstall.Size      = New-Object System.Drawing.Size(200,30)
 $script:btnSaveInstall.Cursor    = [System.Windows.Forms.Cursors]::Hand
 $cfgScroll.Controls.Add($script:btnSaveInstall)
 
-$script:btnSaveOnly = New-Object System.Windows.Forms.Button
-$script:btnSaveOnly.Text      = "Save Only"
-$script:btnSaveOnly.Font      = New-Object System.Drawing.Font("Segoe UI",8.5)
-$script:btnSaveOnly.FlatStyle = "Flat"
-$script:btnSaveOnly.BackColor = [System.Drawing.Color]::FromArgb(230,235,240)
-$script:btnSaveOnly.Location  = New-Object System.Drawing.Point(364,$cfgY)
-$script:btnSaveOnly.Size      = New-Object System.Drawing.Size(120,30)
-$script:btnSaveOnly.Cursor    = [System.Windows.Forms.Cursors]::Hand
-$cfgScroll.Controls.Add($script:btnSaveOnly)
+# Save Only button removed -- Save Configuration does everything now
 
 # ============================================================
 # LOGS PANEL
@@ -1878,58 +1870,14 @@ $script:btnTestConn.add_Click({
     }
 })
 
-# Config: Save Only
-$script:btnSaveOnly.add_Click({
-    if (-not (Validate-CfgForm)) { return }
-    try {
-        Save-AppConfig (Get-ConfigFromForm)
-        $script:lblCfgStatus.Text      = "Configuration saved to: $script:configFile"
-        $script:lblCfgStatus.ForeColor = $clrGreen
-        Refresh-Dashboard
-    } catch {
-        $script:lblCfgStatus.Text      = "ERROR saving config: $_"
-        $script:lblCfgStatus.ForeColor = [System.Drawing.Color]::FromArgb(210,60,60)
-    }
-})
-
-# Config: Save & Install Schedule
+# Config: Save Configuration
 $script:btnSaveInstall.add_Click({
     if (-not (Validate-CfgForm)) { return }
     try {
         $cfg = Get-ConfigFromForm
         Save-AppConfig $cfg
-        $script:lblCfgStatus.Text      = "Config saved. Installing scheduled task..."
-        $script:lblCfgStatus.ForeColor = $clrTextDim
-        $panelConfig.Refresh()
-
-        if ($cfg.scheduleEnabled) {
-            # Task Scheduler with SYSTEM account requires admin -- re-launch elevated if needed
-            $isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
-            if (-not $isAdmin) {
-                $ans = [System.Windows.Forms.MessageBox]::Show("Installing a scheduled task requires Administrator privileges.`n`nClick Yes to restart as Administrator and install the task.","Admin Required","YesNo","Question")
-                if ($ans -eq "Yes") {
-                    Start-Process "C:\Windows\SysWOW64\WindowsPowerShell\v1.0\powershell.exe" -ArgumentList "-ExecutionPolicy Bypass -NoProfile -File `"$script:appDir\EntryPassSync.ps1`"" -Verb RunAs
-                    $script:reallyExit = $true
-                    $mainForm.Close()
-                }
-                return
-            }
-            $result = Install-SyncTask -Location $cfg.location -Frequency $cfg.scheduleFrequency
-            if ($result.Success) {
-                $script:lblCfgStatus.Text      = "Saved and scheduled task installed: $($result.Message)"
-                $script:lblCfgStatus.ForeColor = $clrGreen
-                [System.Windows.Forms.MessageBox]::Show("Config saved and task installed.`n`n$($result.Message)","Setup Complete","OK","Information") | Out-Null
-            } else {
-                $script:lblCfgStatus.Text      = "Saved but task install failed. See details."
-                $script:lblCfgStatus.ForeColor = $clrOrange
-                [System.Windows.Forms.MessageBox]::Show("Config saved but task failed:`n$($result.Message)","Task Install Failed","OK","Warning") | Out-Null
-            }
-        } else {
-            # Remove existing task if schedule was disabled
-            Remove-SyncTask -Location $cfg.location | Out-Null
-            $script:lblCfgStatus.Text      = "Config saved. Scheduled sync is disabled."
-            $script:lblCfgStatus.ForeColor = $clrGreen
-        }
+        $script:lblCfgStatus.Text      = "Configuration saved."
+        $script:lblCfgStatus.ForeColor = $clrGreen
         Refresh-Dashboard
     } catch {
         $script:lblCfgStatus.Text      = "ERROR: $_"
