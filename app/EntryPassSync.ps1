@@ -986,49 +986,18 @@ function Add-CfgField {
     $script:cfgY += ($Height + 10)
 }
 
-# License Key + Validate button
+# Hidden config fields (pre-configured by Dajayana, not shown to site IT)
 $script:txtCfgLicense = New-Object System.Windows.Forms.TextBox
 $script:btnValidateLicense = New-Object System.Windows.Forms.Button
-$script:btnValidateLicense.Text      = "Validate"
-$script:btnValidateLicense.Font      = New-Object System.Drawing.Font("Segoe UI",8.5)
-$script:btnValidateLicense.BackColor = [System.Drawing.Color]::FromArgb(230,235,240)
-$script:btnValidateLicense.FlatStyle = "Flat"
-$script:btnValidateLicense.Size      = New-Object System.Drawing.Size(70,28)
-$script:btnValidateLicense.Cursor    = [System.Windows.Forms.Cursors]::Hand
-
-$lkRow = New-Object System.Windows.Forms.Panel
-$lkRow.Size      = New-Object System.Drawing.Size(440,28)
-$lkRow.BackColor = $clrPanelBg
-$script:txtCfgLicense.Dock = "Fill"
-$script:txtCfgLicense.Font = New-Object System.Drawing.Font("Segoe UI",9)
-$script:btnValidateLicense.Dock = "Right"
-$lkRow.Controls.Add($script:txtCfgLicense)
-$lkRow.Controls.Add($script:btnValidateLicense)
-
-$lblCfgLk = New-Object System.Windows.Forms.Label
-$lblCfgLk.Text      = "License Key *"
-$lblCfgLk.Font      = New-Object System.Drawing.Font("Segoe UI",8.5)
-$lblCfgLk.ForeColor = $clrTextDim
-$lblCfgLk.Location  = New-Object System.Drawing.Point(4,$cfgY)
-$lblCfgLk.Size      = New-Object System.Drawing.Size(175,20)
-$cfgScroll.Controls.Add($lblCfgLk)
-$lkRow.Location = New-Object System.Drawing.Point(183,$cfgY)
-$cfgScroll.Controls.Add($lkRow)
-$cfgY += 38
-
 $script:txtCfgPrimary = New-Object System.Windows.Forms.TextBox
-Add-CfgField "Primary Key *" $script:txtCfgPrimary
-
 $script:txtCfgSecret = New-Object System.Windows.Forms.TextBox
 $script:txtCfgSecret.UseSystemPasswordChar = $true
-Add-CfgField "Secret Key *" $script:txtCfgSecret
-
 $script:cmbCfgEndpoint = New-Object System.Windows.Forms.ComboBox
 $script:cmbCfgEndpoint.DropDownStyle = "DropDownList"
 [void]$script:cmbCfgEndpoint.Items.Add("Production (api.mihcm.com)")
 [void]$script:cmbCfgEndpoint.Items.Add("UAT (api.mihcm.com/uat)")
 $script:cmbCfgEndpoint.SelectedIndex = 0
-Add-CfgField "API Endpoint *" $script:cmbCfgEndpoint 28
+# These controls exist for config load/save but are NOT added to the UI
 
 $script:txtCfgClient = New-Object System.Windows.Forms.TextBox
 Add-CfgField "Client Name *" $script:txtCfgClient
@@ -1298,16 +1267,10 @@ $script:lblCfgStatus.Size      = New-Object System.Drawing.Size(619,22)
 $cfgScroll.Controls.Add($script:lblCfgStatus)
 $cfgY += 30
 
-# Config action buttons
+# Config action buttons (Test Connection hidden -- API keys pre-configured)
 $script:btnTestConn = New-Object System.Windows.Forms.Button
 $script:btnTestConn.Text      = "Test Connection"
-$script:btnTestConn.Font      = New-Object System.Drawing.Font("Segoe UI",8.5)
-$script:btnTestConn.FlatStyle = "Flat"
-$script:btnTestConn.BackColor = [System.Drawing.Color]::FromArgb(230,235,240)
-$script:btnTestConn.Location  = New-Object System.Drawing.Point(4,$cfgY)
-$script:btnTestConn.Size      = New-Object System.Drawing.Size(140,30)
-$script:btnTestConn.Cursor    = [System.Windows.Forms.Cursors]::Hand
-$cfgScroll.Controls.Add($script:btnTestConn)
+$script:btnTestConn.Visible   = $false
 
 $script:btnSaveInstall = New-Object System.Windows.Forms.Button
 $script:btnSaveInstall.Text      = "Save && Install Schedule"
@@ -1316,7 +1279,7 @@ $script:btnSaveInstall.FlatStyle = "Flat"
 $script:btnSaveInstall.FlatAppearance.BorderSize = 0
 $script:btnSaveInstall.BackColor = $clrBlue
 $script:btnSaveInstall.ForeColor = [System.Drawing.Color]::White
-$script:btnSaveInstall.Location  = New-Object System.Drawing.Point(154,$cfgY)
+$script:btnSaveInstall.Location  = New-Object System.Drawing.Point(4,$cfgY)
 $script:btnSaveInstall.Size      = New-Object System.Drawing.Size(200,30)
 $script:btnSaveInstall.Cursor    = [System.Windows.Forms.Cursors]::Hand
 $cfgScroll.Controls.Add($script:btnSaveInstall)
@@ -1326,7 +1289,7 @@ $script:btnSaveOnly.Text      = "Save Only"
 $script:btnSaveOnly.Font      = New-Object System.Drawing.Font("Segoe UI",8.5)
 $script:btnSaveOnly.FlatStyle = "Flat"
 $script:btnSaveOnly.BackColor = [System.Drawing.Color]::FromArgb(230,235,240)
-$script:btnSaveOnly.Location  = New-Object System.Drawing.Point(364,$cfgY)
+$script:btnSaveOnly.Location  = New-Object System.Drawing.Point(214,$cfgY)
 $script:btnSaveOnly.Size      = New-Object System.Drawing.Size(120,30)
 $script:btnSaveOnly.Cursor    = [System.Windows.Forms.Cursors]::Hand
 $cfgScroll.Controls.Add($script:btnSaveOnly)
