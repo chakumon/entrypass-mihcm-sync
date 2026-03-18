@@ -6,6 +6,14 @@
 
 $ErrorActionPreference = "Continue"
 
+# Hide the PowerShell console window
+Add-Type -Name Win32 -Namespace Native -MemberDefinition @"
+    [DllImport("kernel32.dll")] public static extern IntPtr GetConsoleWindow();
+    [DllImport("user32.dll")] public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+"@
+$consoleWnd = [Native.Win32]::GetConsoleWindow()
+if ($consoleWnd -ne [IntPtr]::Zero) { [Native.Win32]::ShowWindow($consoleWnd, 0) | Out-Null }
+
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
 [System.Windows.Forms.Application]::EnableVisualStyles()
