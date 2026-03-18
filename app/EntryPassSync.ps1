@@ -2063,7 +2063,14 @@ $script:countdownTimer.add_Tick({
 $script:countdownTimer.Start()
 
 # Also add to Windows startup so it launches automatically
+# Try machine-wide first (needs admin), fall back to current user
 $startupKey = "HKLM:\Software\Microsoft\Windows\CurrentVersion\Run"
+try {
+    Set-ItemProperty -Path $startupKey -Name "EntryPassMiHCMSync" -Value "" -ErrorAction Stop
+    Remove-ItemProperty -Path $startupKey -Name "EntryPassMiHCMSync" -ErrorAction SilentlyContinue
+} catch {
+    $startupKey = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run"
+}
 $startupName = "EntryPassMiHCMSync"
 $startupCmd = "C:\Windows\SysWOW64\WindowsPowerShell\v1.0\powershell.exe -WindowStyle Hidden -ExecutionPolicy Bypass -NoProfile -File `"$($script:appDir)\EntryPassSync.ps1`""
 try {
