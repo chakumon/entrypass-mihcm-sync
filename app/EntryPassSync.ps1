@@ -1,10 +1,10 @@
 # EntryPassSync.ps1 -- EntryPass to MiHCM Sync -- All-in-One GUI Application
 # Company  : Dajayana Trading (www.dajayana.com)
-# Version  : 1.0.0
+# Version  : 1.1.0
 # Contact  : +60 16-883 8338
 # Requires : PowerShell 5.1+, Windows 10/11
 
-$script:appVersion = "1.0.0"
+$script:appVersion = "1.1.0"
 $script:updateUrl  = "https://raw.githubusercontent.com/chakumon/entrypass-mihcm-sync/main/version.json"
 $script:scriptUrl  = "https://raw.githubusercontent.com/chakumon/entrypass-mihcm-sync/main/app/EntryPassSync.ps1"
 
@@ -2050,14 +2050,20 @@ function Check-ForUpdate {
     }
 }
 
-# Check for updates shortly after startup (deferred so form is ready)
-$script:updateTimer = New-Object System.Windows.Forms.Timer
-$script:updateTimer.Interval = 3000  # 3 seconds after launch
-$script:updateTimer.add_Tick({
-    $script:updateTimer.Stop()
+# Deferred startup actions (3s after form loads)
+$script:startupTimer = New-Object System.Windows.Forms.Timer
+$script:startupTimer.Interval = 3000
+$script:startupTimer.add_Tick({
+    $script:startupTimer.Stop()
+    # Check for updates
     Check-ForUpdate
+    # Run initial sync on startup
+    if (-not $script:syncRunning -and (Is-Configured)) {
+        Write-SyncLog "Startup sync triggered"
+        Start-SyncBackground
+    }
 })
-$script:updateTimer.Start()
+$script:startupTimer.Start()
 
 # ============================================================
 # BUILT-IN SYNC TIMER (syncs every 15 minutes while app is open)
