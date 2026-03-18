@@ -131,7 +131,7 @@ if ([string]::IsNullOrWhiteSpace($SOURCE_FOLDER)) {
 # LICENSE VALIDATION
 # Checks online first, falls back to local cache if offline.
 # ============================================================
-$licenseUrl       = "https://raw.githubusercontent.com/chakumon/entrypass-licenses/main/licenses.json"
+$licenseUrl       = "https://raw.githubusercontent.com/chakumon/entrypass-mihcm-licenses/main/licenses.json"
 $licenseCacheFile = Join-Path $scriptDir "license_cache.json"
 
 function Test-License {

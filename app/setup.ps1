@@ -524,7 +524,7 @@ $btnValidate.Add_Click({
         return
     }
 
-    $licenseUrl = "https://raw.githubusercontent.com/chakumon/entrypass-licenses/main/licenses.json"
+    $licenseUrl = "https://raw.githubusercontent.com/chakumon/entrypass-mihcm-licenses/main/licenses.json"
     try {
         $response    = Invoke-WebRequest -Uri $licenseUrl -UseBasicParsing -TimeoutSec 10
         $licenseData = $response.Content | ConvertFrom-Json
