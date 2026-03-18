@@ -1918,6 +1918,16 @@ $script:btnSaveInstall.add_Click({
         $panelConfig.Refresh()
 
         if ($cfg.scheduleEnabled) {
+            # Task Scheduler with SYSTEM account requires admin -- re-launch elevated if needed
+            $isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+            if (-not $isAdmin) {
+                $ans = [System.Windows.Forms.MessageBox]::Show("Installing a scheduled task requires Administrator privileges.`n`nClick Yes to restart as Administrator and install the task.","Admin Required","YesNo","Question")
+                if ($ans -eq "Yes") {
+                    Start-Process "C:\Windows\SysWOW64\WindowsPowerShell\v1.0\powershell.exe" -ArgumentList "-ExecutionPolicy Bypass -NoProfile -File `"$script:appDir\EntryPassSync.ps1`"" -Verb RunAs
+                    $mainForm.Close()
+                }
+                return
+            }
             $result = Install-SyncTask -Location $cfg.location -Frequency $cfg.scheduleFrequency
             if ($result.Success) {
                 $script:lblCfgStatus.Text      = "Saved and scheduled task installed: $($result.Message)"
