@@ -944,8 +944,7 @@ $script:txtLiveLog.Font         = New-Object System.Drawing.Font("Consolas",8)
 $script:txtLiveLog.Location     = New-Object System.Drawing.Point(24,400)
 $script:txtLiveLog.Size         = New-Object System.Drawing.Size(652,150)
 $script:txtLiveLog.BorderStyle  = "None"
-$script:txtLiveLog.Anchor       = "Top,Left,Right,Bottom"
-$script:txtLiveLog.MaximumSize  = New-Object System.Drawing.Size(0, 250)
+$script:txtLiveLog.Anchor       = "Top,Left,Right"
 $panelDashboard.Controls.Add($script:txtLiveLog)
 
 # ============================================================
