@@ -1,0 +1,1139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Solution Overview — EntryPass–MiHCM Attendance Integration | Dajayana Trading</title>
+  <style>
+    /* ============================================================
+       RESET & BASE
+    ============================================================ */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --blue:      #003366;
+      --blue-light:#004488;
+      --grey-dark: #333333;
+      --grey-mid:  #555555;
+      --grey-row:  #f8f9fa;
+      --grey-line: #e0e6ef;
+      --black:     #000000;
+      --white:     #ffffff;
+    }
+
+    html {
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 11pt;
+      color: var(--black);
+      background: #f0f0f0;
+    }
+
+    /* ============================================================
+       PAGE SHELL (screen preview)
+    ============================================================ */
+    .page-shell {
+      width: 210mm;
+      min-height: 297mm;
+      margin: 20px auto;
+      background: var(--white);
+      box-shadow: 0 4px 32px rgba(0,0,0,0.18);
+      padding: 2.54cm 2.54cm 2.54cm 2.54cm;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ============================================================
+       PRINT / PDF RULES
+    ============================================================ */
+    @page {
+      size: A4 portrait;
+      margin: 2.54cm;
+      @top-center { content: ""; }
+    }
+
+    @media print {
+      html {
+        background: var(--white);
+        font-size: 11pt;
+      }
+
+      .page-shell {
+        width: 100%;
+        margin: 0;
+        padding: 0;
+        box-shadow: none;
+        border: none;
+      }
+
+      .page-header {
+        display: block;
+      }
+
+      .page-footer {
+        display: block;
+      }
+
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+
+      tr {
+        page-break-inside: avoid;
+      }
+
+      .subsection, .risk-item, .callout-box, .support-card, .compare-col {
+        page-break-inside: avoid;
+        break-inside: avoid;
+      }
+
+      .section-break {
+        /* no forced page breaks — keep content flowing */
+      }
+    }
+
+    /* ============================================================
+       HEADER
+    ============================================================ */
+    .page-header {
+      margin-bottom: 18px;
+    }
+
+    .header-top {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      margin-bottom: 3px;
+    }
+
+    .header-company {
+      font-size: 15pt;
+      font-weight: 700;
+      color: var(--blue);
+      letter-spacing: 0.01em;
+    }
+
+    .header-regno {
+      font-size: 10pt;
+      color: var(--grey-dark);
+      font-weight: 400;
+    }
+
+    .header-address {
+      font-size: 10pt;
+      color: var(--black);
+      margin-bottom: 2px;
+    }
+
+    .header-contact {
+      font-size: 9pt;
+      color: var(--blue);
+    }
+
+    .header-rule {
+      border: none;
+      border-top: 0.5pt solid var(--blue);
+      margin-top: 8px;
+    }
+
+    /* ============================================================
+       FOOTER
+    ============================================================ */
+    .page-footer {
+      margin-top: auto;
+      padding-top: 8px;
+    }
+
+    .footer-rule {
+      border: none;
+      border-top: 0.5pt solid var(--blue);
+      margin-bottom: 6px;
+    }
+
+    .footer-content {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 8pt;
+    }
+
+    .footer-left {
+      font-style: italic;
+      color: var(--grey-dark);
+    }
+
+    .footer-right {
+      color: var(--grey-dark);
+    }
+
+    body {
+      counter-reset: page-count;
+    }
+
+    /* ============================================================
+       DOCUMENT BODY
+    ============================================================ */
+    .doc-body {
+      flex: 1;
+    }
+
+    /* ============================================================
+       TITLE SECTION
+    ============================================================ */
+    .title-section {
+      text-align: center;
+      margin: 28px 0 24px 0;
+      padding-bottom: 24px;
+      border-bottom: 0.5pt solid var(--grey-line);
+    }
+
+    .doc-title {
+      font-size: 18pt;
+      font-weight: 700;
+      color: var(--blue);
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    .doc-subtitle {
+      font-size: 14pt;
+      font-weight: 400;
+      color: var(--grey-dark);
+      margin-bottom: 22px;
+    }
+
+    .doc-meta {
+      display: inline-block;
+      text-align: left;
+      background: var(--grey-row);
+      border-left: 3px solid var(--blue);
+      border-radius: 0 4px 4px 0;
+      padding: 12px 24px;
+      font-size: 10.5pt;
+    }
+
+    .doc-meta table {
+      border-collapse: collapse;
+    }
+
+    .doc-meta td {
+      padding: 2px 12px 2px 0;
+      vertical-align: top;
+      border: none;
+      background: transparent;
+    }
+
+    .doc-meta td:first-child {
+      font-weight: 700;
+      color: var(--grey-dark);
+      white-space: nowrap;
+    }
+
+    .doc-meta td:last-child {
+      color: var(--black);
+    }
+
+    /* ============================================================
+       SECTION HEADINGS
+    ============================================================ */
+    .section {
+      margin-bottom: 28px;
+    }
+
+    h2.section-heading {
+      font-size: 13pt;
+      font-weight: 700;
+      color: var(--blue);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 12px;
+      margin-top: 28px;
+      padding-bottom: 5px;
+      border-bottom: 1px solid var(--grey-line);
+    }
+
+    h3.sub-heading {
+      font-size: 11.5pt;
+      font-weight: 700;
+      color: var(--blue);
+      margin-bottom: 10px;
+      margin-top: 18px;
+    }
+
+    /* ============================================================
+       BODY TEXT
+    ============================================================ */
+    p {
+      line-height: 1.6;
+      margin-bottom: 10px;
+      color: var(--black);
+    }
+
+    ul {
+      margin: 8px 0 12px 20px;
+      line-height: 1.7;
+    }
+
+    ul li {
+      margin-bottom: 3px;
+      color: var(--black);
+    }
+
+    ul li strong {
+      color: var(--blue);
+    }
+
+    /* ============================================================
+       PREMIUM TABLES
+    ============================================================ */
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 12px 0 20px 0;
+      font-size: 10.5pt;
+      border: 1px solid var(--grey-line);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .data-table thead tr {
+      background-color: var(--blue);
+      color: var(--white);
+    }
+
+    .data-table thead th {
+      padding: 10px 14px;
+      text-align: left;
+      font-weight: 600;
+      font-size: 10pt;
+      letter-spacing: 0.03em;
+      border: none;
+    }
+
+    .data-table tbody tr:nth-child(odd) {
+      background-color: var(--grey-row);
+    }
+
+    .data-table tbody tr:nth-child(even) {
+      background-color: var(--white);
+    }
+
+    .data-table tbody tr:hover {
+      background-color: #e8eef6;
+    }
+
+    .data-table tbody td {
+      padding: 9px 14px;
+      border-bottom: 1px solid var(--grey-line);
+      vertical-align: top;
+      line-height: 1.5;
+    }
+
+    .data-table tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    .data-table .col-num {
+      width: 36px;
+      text-align: center;
+      font-weight: 700;
+      color: var(--blue);
+    }
+
+    .data-table .col-cap {
+      width: 160px;
+      font-weight: 600;
+      color: var(--grey-dark);
+    }
+
+    .data-table .col-sitecode {
+      width: 100px;
+      font-weight: 700;
+      color: var(--blue);
+      font-family: 'Courier New', monospace;
+      font-size: 10pt;
+    }
+
+    .data-table .status-active {
+      color: #1a7a3a;
+      font-weight: 600;
+    }
+
+    .data-table .status-planned {
+      color: #8a6800;
+      font-weight: 500;
+    }
+
+    /* Spec table: two-column key-value */
+    .spec-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 12px 0 20px 0;
+      font-size: 10.5pt;
+      border: 1px solid var(--grey-line);
+      overflow: hidden;
+    }
+
+    .spec-table tbody tr:nth-child(odd) {
+      background-color: var(--grey-row);
+    }
+
+    .spec-table tbody tr:nth-child(even) {
+      background-color: var(--white);
+    }
+
+    .spec-table tbody td {
+      padding: 9px 14px;
+      border-bottom: 1px solid var(--grey-line);
+      vertical-align: top;
+    }
+
+    .spec-table tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    .spec-table .spec-key {
+      width: 220px;
+      font-weight: 600;
+      color: var(--grey-dark);
+    }
+
+    .spec-table .spec-val {
+      color: var(--black);
+    }
+
+    /* ============================================================
+       BEFORE / AFTER COMPARISON
+    ============================================================ */
+    .comparison-container {
+      display: flex;
+      gap: 20px;
+      margin: 14px 0 20px 0;
+    }
+
+    .comparison-box {
+      flex: 1;
+      border-radius: 6px;
+      padding: 16px 20px;
+      border: 1px solid var(--grey-line);
+    }
+
+    .comparison-box.before {
+      background: #fff8f0;
+      border-left: 4px solid #cc4400;
+      box-shadow: 0 2px 8px rgba(204,68,0,0.08);
+    }
+
+    .comparison-box.after {
+      background: #f0f8f4;
+      border-left: 4px solid #1a7a3a;
+      box-shadow: 0 2px 8px rgba(26,122,58,0.08);
+    }
+
+    .comparison-box h4 {
+      font-size: 10.5pt;
+      font-weight: 700;
+      margin-bottom: 10px;
+      letter-spacing: 0.02em;
+    }
+
+    .comparison-box.before h4 {
+      color: #cc4400;
+    }
+
+    .comparison-box.after h4 {
+      color: #1a7a3a;
+    }
+
+    .comparison-box ul {
+      margin: 0 0 0 16px;
+      padding: 0;
+    }
+
+    .comparison-box ul li {
+      font-size: 10.5pt;
+      margin-bottom: 5px;
+      line-height: 1.5;
+    }
+
+    .comparison-box.before ul li {
+      color: #5a2000;
+    }
+
+    .comparison-box.after ul li {
+      color: #0a3a1a;
+    }
+
+    /* ============================================================
+       RISK MITIGATION LIST
+    ============================================================ */
+    .risk-list {
+      margin: 8px 0 12px 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .risk-list li {
+      padding: 6px 0 6px 14px;
+      border-bottom: 1px solid var(--grey-line);
+      line-height: 1.55;
+    }
+
+    .risk-list li:last-child {
+      border-bottom: none;
+    }
+
+    .risk-list li strong {
+      color: var(--blue);
+    }
+
+    /* ============================================================
+       SUPPORT BLOCKS
+    ============================================================ */
+    .support-grid {
+      display: flex;
+      gap: 18px;
+      margin: 12px 0 20px 0;
+      page-break-inside: avoid;
+      break-inside: avoid;
+    }
+
+    .support-block {
+      flex: 1;
+      background: var(--grey-row);
+      border: 1px solid var(--grey-line);
+      border-top: 3px solid var(--blue);
+      border-radius: 0 0 4px 4px;
+      padding: 14px 16px;
+    }
+
+    .support-block h4 {
+      font-size: 10.5pt;
+      font-weight: 700;
+      color: var(--blue);
+      margin-bottom: 8px;
+      letter-spacing: 0.02em;
+    }
+
+    .support-block ul {
+      margin: 0 0 0 14px;
+      padding: 0;
+      font-size: 10pt;
+    }
+
+    .support-block ul li {
+      margin-bottom: 4px;
+      line-height: 1.5;
+    }
+
+    /* ============================================================
+       CLOSING LINE
+    ============================================================ */
+    .closing-line {
+      text-align: center;
+      font-size: 10pt;
+      color: var(--blue);
+      margin-top: 36px;
+      padding-top: 14px;
+      border-top: 0.5pt solid var(--grey-line);
+      font-weight: 600;
+      letter-spacing: 0.03em;
+    }
+
+    /* ============================================================
+       SCALABILITY CALLOUT
+    ============================================================ */
+    .scalability-box {
+      background: var(--grey-row);
+      border: 1px solid var(--grey-line);
+      border-left: 4px solid var(--blue);
+      border-radius: 0 4px 4px 0;
+      padding: 14px 18px;
+      margin: 10px 0 18px 0;
+    }
+
+    .scalability-box ul {
+      margin: 0 0 0 16px;
+      padding: 0;
+    }
+
+    .scalability-box ul li {
+      margin-bottom: 4px;
+      font-size: 10.5pt;
+      line-height: 1.55;
+    }
+
+    /* ============================================================
+       DATA FLOW DIAGRAM (text-based)
+    ============================================================ */
+    .flow-diagram {
+      font-family: 'Courier New', monospace;
+      font-size: 9.5pt;
+      background: #1e1e2e;
+      color: #cdd6f4;
+      border-radius: 6px;
+      padding: 18px 24px;
+      margin: 12px 0 18px 0;
+      line-height: 2.0;
+      page-break-inside: avoid;
+      break-inside: avoid;
+    }
+
+    .flow-diagram .fd-box    { color: #89b4fa; font-weight: 700; }
+    .flow-diagram .fd-arrow  { color: #6c7086; }
+    .flow-diagram .fd-label  { color: #a6e3a1; }
+    .flow-diagram .fd-note   { color: #f9e2af; }
+
+  </style>
+</head>
+<body>
+<div class="page-shell">
+
+  <!-- ============================================================
+       HEADER
+  ============================================================ -->
+  <header class="page-header">
+    <div class="header-top">
+      <span class="header-company">DAJAYANA TRADING</span>
+      <span class="header-regno">(002599536-U)</span>
+    </div>
+    <div class="header-address">Lot 7584, Jalan Interhill, Taman Horizon, 98000 Miri, Sarawak, Malaysia</div>
+    <div class="header-contact">Tel: +60 16-883 8338 &nbsp;|&nbsp; Email: rgyong@outlook.com &nbsp;|&nbsp; Web: www.dajayana.com</div>
+    <hr class="header-rule">
+  </header>
+
+  <!-- ============================================================
+       DOCUMENT BODY
+  ============================================================ -->
+  <div class="doc-body">
+
+    <!-- TITLE SECTION -->
+    <div class="title-section">
+      <div class="doc-title">Solution Overview</div>
+      <div class="doc-subtitle">EntryPass–MiHCM Attendance Integration</div>
+      <div class="doc-meta">
+        <table>
+          <tr>
+            <td>Prepared for:</td>
+            <td>Petra Energy Sdn Bhd</td>
+          </tr>
+          <tr>
+            <td>Prepared by:</td>
+            <td>Dajayana Trading</td>
+          </tr>
+          <tr>
+            <td>Date:</td>
+            <td>March 2026</td>
+          </tr>
+          <tr>
+            <td>App Version:</td>
+            <td>v1.1.2</td>
+          </tr>
+          <tr>
+            <td>Document Reference:</td>
+            <td>DA/PETRA/MIHCM/2026/002</td>
+          </tr>
+        </table>
+      </div>
+    </div>
+
+    <!-- ============================================================
+         SECTION 1 — EXECUTIVE SUMMARY
+    ============================================================ -->
+    <div class="section">
+      <h2 class="section-heading">1. Executive Summary</h2>
+      <p>
+        This solution automates the transfer of employee attendance data from Petra Energy's existing EntryPass
+        access control system into MiHCM's cloud-based HR platform. What was previously a manual, error-prone
+        process requiring daily human intervention is now a fully automated, zero-touch pipeline. The application
+        runs continuously on a Windows workstation at each site, syncing attendance records to MiHCM every
+        15 minutes with no IT involvement required under normal operation.
+      </p>
+      <p>
+        Version 1.1.2 introduces a purpose-built Windows GUI application — <strong>EntryPassSync</strong> — that
+        connects directly to the EntryPass Firebird database, eliminating the dependency on file exports entirely.
+        The application features automatic startup, a built-in sync timer, live status monitoring, and
+        self-updating capability via GitHub.
+      </p>
+    </div>
+
+    <!-- ============================================================
+         SECTION 2 — THE CHALLENGE
+    ============================================================ -->
+    <div class="section">
+      <h2 class="section-heading">2. The Challenge</h2>
+      <p>
+        Petra Energy operates EntryPass card readers at multiple sites across Sarawak and Labuan for employee
+        clock-in/clock-out. This attendance data must be fed into MiHCM for payroll processing, leave
+        management, and HR reporting.
+      </p>
+      <p><strong>Without this integration:</strong></p>
+      <ul>
+        <li>HR staff must manually export data from EntryPass at each site daily</li>
+        <li>Exported data must be manually reformatted to match MiHCM's API requirements</li>
+        <li>Records must be manually uploaded to MiHCM via the web portal</li>
+        <li>Formatting errors cause failed imports and payroll delays</li>
+        <li>No audit trail — if something goes wrong, there is no log to trace</li>
+        <li>This manual burden multiplies with every additional site</li>
+      </ul>
+    </div>
+
+    <!-- ============================================================
+         SECTION 3 — THE SOLUTION
+    ============================================================ -->
+    <div class="section section-break">
+      <h2 class="section-heading">3. The Solution</h2>
+      <p>
+        <strong>EntryPassSync</strong> is a purpose-built Windows application developed by Dajayana Trading that
+        bridges EntryPass and MiHCM, handling the complete data pipeline automatically and continuously.
+      </p>
+
+      <h3 class="sub-heading">3.1 Architecture Overview</h3>
+      <p>
+        The application runs as a GUI application with a system tray presence on a designated Windows workstation
+        at each Petra Energy site. It reads attendance data directly from the EntryPass Firebird database
+        (the live database used by EntryPass itself) and uploads records to MiHCM's cloud API every 15 minutes.
+        No file exports, no manual steps, no Task Scheduler — the application manages its own schedule.
+      </p>
+
+      <div class="flow-diagram">
+        <span class="fd-box">  EntryPass Card Readers</span><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="fd-arrow">│</span>  <span class="fd-note">Clock-in / clock-out events</span><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="fd-arrow">▼</span><br>
+        <span class="fd-box">  EntryPass Firebird Database</span>  <span class="fd-note">(TRANS.FDB — local, on-premise)</span><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="fd-arrow">│</span>  <span class="fd-label">Direct DB read — ServerType=0, port 3050</span><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="fd-arrow">▼</span><br>
+        <span class="fd-box">  EntryPassSync Application</span>  <span class="fd-note">(Windows workstation, auto-start)</span><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="fd-arrow">│</span>  <span class="fd-label">HTTPS POST — OAuth2, 80 records/batch</span><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="fd-arrow">▼</span><br>
+        <span class="fd-box">  MiHCM Cloud API</span>  <span class="fd-note">(api.mihcm.com — attendance records)</span><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="fd-arrow">│</span><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="fd-arrow">▼</span><br>
+        <span class="fd-box">  MiHCM HR Platform</span>  <span class="fd-note">(payroll, leave, reporting)</span>
+      </div>
+
+      <h3 class="sub-heading">3.2 Core Capabilities</h3>
+
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th class="col-num">#</th>
+            <th class="col-cap">Capability</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="col-num">1</td>
+            <td class="col-cap">Database Direct Mode</td>
+            <td>Connects directly to the EntryPass Firebird database (TRANS.FDB) using the .NET Firebird driver. Reads daily attendance tables (STT&lt;YYYYMMDD&gt;) without requiring any file exports from EntryPass</td>
+          </tr>
+          <tr>
+            <td class="col-num">2</td>
+            <td class="col-cap">Continuous Auto-Sync</td>
+            <td>Syncs immediately on application startup, then automatically every 15 minutes. A live countdown timer on the dashboard shows time until next sync. No Task Scheduler or cron jobs required</td>
+          </tr>
+          <tr>
+            <td class="col-num">3</td>
+            <td class="col-cap">Auto-Start with Windows</td>
+            <td>Registers itself in the Windows registry (HKLM\Software\Microsoft\Windows\CurrentVersion\Run) on first run as Administrator. Starts automatically when any user logs into Windows — machine-wide, not user-specific</td>
+          </tr>
+          <tr>
+            <td class="col-num">4</td>
+            <td class="col-cap">Windows GUI &amp; System Tray</td>
+            <td>Full Windows Forms GUI with a Dashboard, Configuration panel, Live Log viewer, and About panel. Minimises to the system tray (with Dajayana logo icon) when closed — keeps running in the background without cluttering the taskbar</td>
+          </tr>
+          <tr>
+            <td class="col-num">5</td>
+            <td class="col-cap">Multi-Day Catch-Up</td>
+            <td>Configurable sync window (default: 2 days — today and yesterday). Ensures attendance data is not missed over weekends, public holidays, or if the workstation was offline</td>
+          </tr>
+          <tr>
+            <td class="col-num">6</td>
+            <td class="col-cap">Secure Authentication</td>
+            <td>Authenticates with MiHCM's cloud API using OAuth 2.0 Client Credentials flow. Tokens are managed automatically with mid-session refresh on HTTP 401</td>
+          </tr>
+          <tr>
+            <td class="col-num">7</td>
+            <td class="col-cap">Batch Upload</td>
+            <td>Uploads records in optimised batches of 80 records per request to MiHCM's attendance endpoint, respecting API payload constraints and rate limits</td>
+          </tr>
+          <tr>
+            <td class="col-num">8</td>
+            <td class="col-cap">Duplicate Prevention</td>
+            <td>Server-side duplicate detection prevents double-counting in MiHCM. Safe to re-run at any time — already-uploaded records are silently skipped</td>
+          </tr>
+          <tr>
+            <td class="col-num">9</td>
+            <td class="col-cap">Error Recovery</td>
+            <td>Automatic retry with exponential backoff (2s → 4s → 8s) on network failures, API throttling (HTTP 429), or server errors (5xx). Token refresh on 401. The application recovers without human intervention</td>
+          </tr>
+          <tr>
+            <td class="col-num">10</td>
+            <td class="col-cap">Location Tagging</td>
+            <td>Each site's data is tagged with its location code (pre-configured per site) for site-level reporting and analytics in MiHCM</td>
+          </tr>
+          <tr>
+            <td class="col-num">11</td>
+            <td class="col-cap">Live Log Viewer</td>
+            <td>Real-time sync log displayed within the application — IT staff can see exactly what was uploaded, any errors, and when the last sync ran</td>
+          </tr>
+          <tr>
+            <td class="col-num">12</td>
+            <td class="col-cap">Auto-Update</td>
+            <td>Checks GitHub for new versions on startup. The About panel includes a "Check for Updates" button. Updates are applied by replacing the application file — no reinstallation required</td>
+          </tr>
+          <tr>
+            <td class="col-num">13</td>
+            <td class="col-cap">License Validation</td>
+            <td>License key validated against GitHub on startup with a local cache fallback. If online validation fails, the cached license permits continued operation — no service interruption during internet outages</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3 class="sub-heading">3.3 Multi-Site Deployment</h3>
+
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th class="col-sitecode">Site Code</th>
+            <th>Location</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="col-sitecode">PEMO</td>
+            <td>Miri — Pujut Office</td>
+            <td class="status-active">&#10003; Active</td>
+          </tr>
+          <tr>
+            <td class="col-sitecode">PPO</td>
+            <td>Miri — Piasau Office</td>
+            <td class="status-planned">Pre-configured, Ready to Deploy</td>
+          </tr>
+          <tr>
+            <td class="col-sitecode">PFY</td>
+            <td>Labuan — Fabrication Yard</td>
+            <td class="status-planned">Pre-configured, Ready to Deploy</td>
+          </tr>
+          <tr>
+            <td class="col-sitecode">BIF</td>
+            <td>Bintulu</td>
+            <td class="status-planned">Pre-configured, Ready to Deploy</td>
+          </tr>
+          <tr>
+            <td class="col-sitecode">SK407</td>
+            <td>Miri — SK407 Office</td>
+            <td class="status-planned">Pre-configured, Ready to Deploy</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p>Each site receives a pre-configured deployment package. Dajayana Trading pre-sets all credentials, API keys, Firebird database path, and location code in the configuration file before handing over the package. Site IT staff simply copy the folder to the workstation and launch the application.</p>
+    </div>
+
+    <!-- ============================================================
+         SECTION 4 — SECURITY & CONNECTIVITY
+    ============================================================ -->
+    <div class="section section-break">
+      <h2 class="section-heading">4. Security &amp; Connectivity</h2>
+
+      <h3 class="sub-heading">4.1 Network Requirements</h3>
+      <p>
+        The application requires <strong>no inbound network access</strong> and opens no listening ports.
+        All communication is outbound HTTPS only:
+      </p>
+      <ul>
+        <li><strong>api.mihcm.com</strong> — Attendance data upload and OAuth2 token requests</li>
+        <li><strong>raw.githubusercontent.com</strong> — License validation and version/update checks</li>
+      </ul>
+      <p>Standard outbound HTTPS (port 443) through the site's existing internet connection is sufficient.
+         No VPN, port forwarding, or firewall rule changes are required beyond allowing outbound HTTPS.</p>
+
+      <h3 class="sub-heading">4.2 Credential Management</h3>
+      <p>
+        All sensitive credentials — including the MiHCM API client ID and secret, subscription key, Firebird
+        database credentials, license key, and location code — are stored in a pre-configured
+        <code>config.json</code> file provided by Dajayana Trading. These values are not exposed in the
+        application UI. Site IT staff cannot view or modify API credentials through the interface.
+      </p>
+
+      <h3 class="sub-heading">4.3 Data Privacy</h3>
+      <p>
+        Attendance records (card number, timestamp, location) are transmitted directly to MiHCM's
+        authenticated API endpoint over TLS-encrypted HTTPS. No attendance data is stored outside the
+        local machine or transmitted to any third party.
+      </p>
+
+      <table class="spec-table">
+        <tbody>
+          <tr>
+            <td class="spec-key">API Endpoint</td>
+            <td class="spec-val">MiHCM REST API — api.mihcm.com (Azure API Management)</td>
+          </tr>
+          <tr>
+            <td class="spec-key">Authentication</td>
+            <td class="spec-val">OAuth 2.0 Client Credentials + APIM Subscription Key</td>
+          </tr>
+          <tr>
+            <td class="spec-key">Transport Security</td>
+            <td class="spec-val">HTTPS / TLS — all API traffic encrypted in transit</td>
+          </tr>
+          <tr>
+            <td class="spec-key">Credential Storage</td>
+            <td class="spec-val">config.json (local, pre-configured by Dajayana Trading)</td>
+          </tr>
+          <tr>
+            <td class="spec-key">Inbound Ports</td>
+            <td class="spec-val">None — application opens no listening ports</td>
+          </tr>
+          <tr>
+            <td class="spec-key">Outbound Destinations</td>
+            <td class="spec-val">api.mihcm.com, raw.githubusercontent.com (HTTPS only)</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ============================================================
+         SECTION 5 — TECHNICAL SPECIFICATIONS
+    ============================================================ -->
+    <div class="section section-break">
+      <h2 class="section-heading">5. Technical Specifications</h2>
+
+      <table class="spec-table">
+        <tbody>
+          <tr>
+            <td class="spec-key">Application Type</td>
+            <td class="spec-val">Windows Forms GUI — single-file PowerShell application (EntryPassSync.ps1)</td>
+          </tr>
+          <tr>
+            <td class="spec-key">Launcher</td>
+            <td class="spec-val">EntryPassSync.vbs — bypasses PowerShell execution policy, suppresses console window</td>
+          </tr>
+          <tr>
+            <td class="spec-key">PowerShell Runtime</td>
+            <td class="spec-val">32-bit PowerShell (SysWOW64) — required for Firebird .NET driver compatibility</td>
+          </tr>
+          <tr>
+            <td class="spec-key">Database Engine</td>
+            <td class="spec-val">Firebird 2.5 (ODS 11.2) — reads STT&lt;YYYYMMDD&gt; tables from TRANS.FDB</td>
+          </tr>
+          <tr>
+            <td class="spec-key">DB Connection Mode</td>
+            <td class="spec-val">ServerType=0 (connects to running Firebird service on port 3050)</td>
+          </tr>
+          <tr>
+            <td class="spec-key">MiHCM API</td>
+            <td class="spec-val">REST API via Azure APIM — clockfileuploads endpoint</td>
+          </tr>
+          <tr>
+            <td class="spec-key">Batch Size</td>
+            <td class="spec-val">80 records per upload request (API maximum: 100)</td>
+          </tr>
+          <tr>
+            <td class="spec-key">Retry Logic</td>
+            <td class="spec-val">3 attempts, exponential backoff (2s → 4s → 8s), Retry-After compliance</td>
+          </tr>
+          <tr>
+            <td class="spec-key">Token Management</td>
+            <td class="spec-val">Automatic refresh on HTTP 401 during sync operation</td>
+          </tr>
+          <tr>
+            <td class="spec-key">Idempotency</td>
+            <td class="spec-val">Duplicate detection via MiHCM server-side validation — safe to re-run</td>
+          </tr>
+          <tr>
+            <td class="spec-key">Sync Schedule</td>
+            <td class="spec-val">Immediately on startup, then every 15 minutes (built-in timer)</td>
+          </tr>
+          <tr>
+            <td class="spec-key">Sync Window</td>
+            <td class="spec-val">Configurable syncDays (default: 2 — covers today and yesterday)</td>
+          </tr>
+          <tr>
+            <td class="spec-key">Auto-Start</td>
+            <td class="spec-val">HKLM\Software\Microsoft\Windows\CurrentVersion\Run — machine-wide</td>
+          </tr>
+          <tr>
+            <td class="spec-key">Update Mechanism</td>
+            <td class="spec-val">GitHub release check on startup; manual "Check for Updates" in About panel</td>
+          </tr>
+          <tr>
+            <td class="spec-key">License Validation</td>
+            <td class="spec-val">Online GitHub check with local cache fallback for offline resilience</td>
+          </tr>
+          <tr>
+            <td class="spec-key">Deployment Package</td>
+            <td class="spec-val">EntryPassSync.ps1, config.json, dajayana.ico, EntryPassSync.vbs</td>
+          </tr>
+          <tr>
+            <td class="spec-key">OS Requirement</td>
+            <td class="spec-val">Windows 10 / Windows Server 2016 or later</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ============================================================
+         SECTION 6 — BUSINESS VALUE
+    ============================================================ -->
+    <div class="section">
+      <h2 class="section-heading">6. Business Value</h2>
+
+      <h3 class="sub-heading">6.1 Operational Efficiency</h3>
+
+      <div class="comparison-container">
+        <div class="comparison-box before">
+          <h4>&#9888; Before — Manual Process</h4>
+          <ul>
+            <li>30–60 minutes of HR work per site per day</li>
+            <li>Across 5 sites: 2.5–5 hours of manual labour daily</li>
+            <li>Prone to human error in data formatting</li>
+            <li>No standardised audit trail</li>
+            <li>Delayed payroll processing due to import failures</li>
+            <li>Missed exports on holidays or staff absences</li>
+          </ul>
+        </div>
+        <div class="comparison-box after">
+          <h4>&#10004; After — EntryPassSync v1.1.2</h4>
+          <ul>
+            <li>Zero daily effort — fully automated, 24/7</li>
+            <li>Syncs every 15 minutes — data in MiHCM within the hour</li>
+            <li>Consistent, error-free data via direct database read</li>
+            <li>Complete live log for every sync operation</li>
+            <li>Catches up automatically after outages or weekends</li>
+            <li>Scales to new sites with a pre-configured folder</li>
+          </ul>
+        </div>
+      </div>
+
+      <h3 class="sub-heading">6.2 Risk Mitigation</h3>
+      <ul class="risk-list">
+        <li><strong>No Export Dependency:</strong> Reads directly from the Firebird database — no reliance on EntryPass export functions or file naming conventions</li>
+        <li><strong>Network Resilience:</strong> Automatic retry with exponential backoff handles intermittent connectivity; sync resumes at the next interval</li>
+        <li><strong>Session Continuity:</strong> OAuth2 token auto-refresh eliminates manual re-authentication and mid-run failures</li>
+        <li><strong>Duplicate Safety:</strong> Idempotent uploads prevent double-counting in MiHCM payroll, regardless of how many times the sync runs</li>
+        <li><strong>Offline Tolerance:</strong> License cache fallback ensures the application continues running during internet outages</li>
+        <li><strong>Multi-Day Catch-Up:</strong> Configurable sync window ensures no records are lost during planned maintenance or unexpected downtime</li>
+      </ul>
+
+      <h3 class="sub-heading">6.3 Scalability</h3>
+      <div class="scalability-box">
+        <ul>
+          <li>Four additional sites (PPO, PFY, BIF, SK407) are fully pre-configured and ready to deploy</li>
+          <li>Activating a new site requires only copying a folder to the site workstation and running the launcher</li>
+          <li>No additional API licensing required — works within the existing MiHCM subscription</li>
+          <li>Dajayana Trading prepares all site-specific configuration — zero site-IT configuration required</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- ============================================================
+         SECTION 7 — DEPLOYMENT MODEL
+    ============================================================ -->
+    <div class="section">
+      <h2 class="section-heading">7. Deployment Model</h2>
+
+      <p>
+        Each site receives a pre-configured deployment package prepared by Dajayana Trading. The package is
+        self-contained and requires no installation wizard, no additional software beyond a running Firebird service,
+        and no configuration by site IT staff.
+      </p>
+
+      <h3 class="sub-heading">7.1 Deployment Package (per site)</h3>
+
+      <table class="spec-table">
+        <tbody>
+          <tr>
+            <td class="spec-key">EntryPassSync.ps1</td>
+            <td class="spec-val">The main application — PowerShell WinForms GUI. Do not edit.</td>
+          </tr>
+          <tr>
+            <td class="spec-key">EntryPassSync.vbs</td>
+            <td class="spec-val">The launcher. Double-click this to start the application. Handles execution policy bypass and hides the PowerShell console.</td>
+          </tr>
+          <tr>
+            <td class="spec-key">config.json</td>
+            <td class="spec-val">Pre-configured by Dajayana Trading. Contains license key, MiHCM API credentials, Firebird DB path, location code, and sync settings. Not visible in the UI.</td>
+          </tr>
+          <tr>
+            <td class="spec-key">dajayana.ico</td>
+            <td class="spec-val">Application icon displayed in the system tray and taskbar.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3 class="sub-heading">7.2 Deployment Steps (site IT)</h3>
+      <ul>
+        <li>Copy the pre-configured folder to the designated workstation (the same machine running EntryPass or with network access to the Firebird database)</li>
+        <li>Right-click <strong>EntryPassSync.vbs</strong> and select <strong>Run as Administrator</strong> for the first launch — this registers the auto-start registry key</li>
+        <li>The application starts, syncs immediately, and begins the 15-minute timer</li>
+        <li>Subsequent launches (after Windows restart) are fully automatic — no user action required</li>
+      </ul>
+    </div>
+
+    <!-- ============================================================
+         SECTION 8 — SUPPORT & MAINTENANCE
+    ============================================================ -->
+    <div class="section">
+      <h2 class="section-heading">8. Support &amp; Maintenance</h2>
+
+      <div class="support-grid">
+        <div class="support-block">
+          <h4>Initial Deployment (per site)</h4>
+          <ul>
+            <li>Preparation of site-specific config.json</li>
+            <li>Remote or on-site installation support</li>
+            <li>Validation run — confirm data flowing to MiHCM</li>
+            <li>Knowledge transfer to site IT personnel</li>
+          </ul>
+        </div>
+        <div class="support-block">
+          <h4>Ongoing Operations</h4>
+          <ul>
+            <li>Application self-manages sync, retry, and token refresh</li>
+            <li>Live log viewer for IT staff monitoring</li>
+            <li>Self-updates via GitHub release channel</li>
+            <li>License cache ensures continuity during outages</li>
+          </ul>
+        </div>
+        <div class="support-block">
+          <h4>Dajayana Trading Support</h4>
+          <ul>
+            <li>Covered under IT support agreement</li>
+            <li>Application updates for MiHCM API changes</li>
+            <li>New site configuration and deployment</li>
+            <li>Remote troubleshooting via RustDesk / Tailscale</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- CLOSING LINE -->
+    <div class="closing-line">
+      DAJAYANA TRADING — IT Solutions &amp; Managed Services &nbsp;|&nbsp; www.dajayana.com
+    </div>
+
+  </div><!-- /doc-body -->
+
+  <!-- ============================================================
+       FOOTER
+  ============================================================ -->
+  <footer class="page-footer">
+    <hr class="footer-rule">
+    <div class="footer-content">
+      <span class="footer-left">CONFIDENTIAL — For intended recipient only</span>
+      <span class="footer-right">EntryPassSync v1.1.2 &nbsp;|&nbsp; DA/PETRA/MIHCM/2026/002</span>
+    </div>
+  </footer>
+
+</div><!-- /page-shell -->
+</body>
+</html>
