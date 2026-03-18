@@ -676,8 +676,8 @@ $mainForm.Text            = "EntryPass-MiHCM Sync v1.0"
 $mainForm.Size            = New-Object System.Drawing.Size(900,620)
 $mainForm.MinimumSize     = New-Object System.Drawing.Size(900,620)
 $mainForm.StartPosition   = "CenterScreen"
-$mainForm.FormBorderStyle = "FixedSingle"
-$mainForm.MaximizeBox     = $false
+$mainForm.FormBorderStyle = "Sizable"
+$mainForm.MaximizeBox     = $true
 $mainForm.BackColor       = $clrPanelBg
 $mainForm.Font            = New-Object System.Drawing.Font("Segoe UI",9)
 
