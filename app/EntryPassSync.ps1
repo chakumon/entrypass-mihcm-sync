@@ -1881,6 +1881,7 @@ $script:btnSaveInstall.add_Click({
                 $ans = [System.Windows.Forms.MessageBox]::Show("Installing a scheduled task requires Administrator privileges.`n`nClick Yes to restart as Administrator and install the task.","Admin Required","YesNo","Question")
                 if ($ans -eq "Yes") {
                     Start-Process "C:\Windows\SysWOW64\WindowsPowerShell\v1.0\powershell.exe" -ArgumentList "-ExecutionPolicy Bypass -NoProfile -File `"$script:appDir\EntryPassSync.ps1`"" -Verb RunAs
+                    $script:reallyExit = $true
                     $mainForm.Close()
                 }
                 return
