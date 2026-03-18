@@ -395,8 +395,8 @@ function Read-FirebirdDatabase {
         $reader = $null
         try {
             if ($providerType -eq "dotnet") {
-                # ServerType=1 = embedded (local file), ServerType=0 = remote
-                $connStr = "Database=$dbFile;User=$FbUser;Password=$FbPassword;ServerType=1;Charset=UTF8"
+                # ServerType=0 = server mode (connects to running Firebird service)
+                $connStr = "Database=$dbFile;User=$FbUser;Password=$FbPassword;ServerType=0;DataSource=localhost;Charset=UTF8"
                 $conn    = New-Object FirebirdSql.Data.FirebirdClient.FbConnection($connStr)
                 $conn.Open()
                 $cmd = $conn.CreateCommand()
@@ -483,7 +483,7 @@ function Test-FirebirdConnection {
     $reader = $null
     try {
         if ($providerType -eq "dotnet") {
-            $connStr = "Database=$dbFile;User=$FbUser;Password=$FbPassword;ServerType=1;Charset=UTF8"
+            $connStr = "Database=$dbFile;User=$FbUser;Password=$FbPassword;ServerType=0;DataSource=localhost;Charset=UTF8"
             $conn    = New-Object FirebirdSql.Data.FirebirdClient.FbConnection($connStr)
         } else {
             $connStr = "Driver={Firebird/InterBase(r) driver};Database=$dbFile;UID=$FbUser;PWD=$FbPassword;CHARSET=UTF8"
